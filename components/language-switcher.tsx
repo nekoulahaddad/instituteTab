@@ -1,65 +1,52 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import { Colors } from "../constants/theme";
 import { useLanguage } from "../context/LanguageContext";
+import { useColorScheme } from "../hooks/use-color-scheme";
+import { IconSymbol } from "./ui/icon-symbol";
 
-const LanguageSwitcher: React.FC = () => {
-  const { language, changeLanguage, isRTL } = useLanguage();
+const LanguageSwitcher: React.FC<any> = (props) => {
+  const { language, changeLanguage } = useLanguage();
 
   const toggleLanguage = () => {
     changeLanguage(language === "en" ? "ar" : "en");
   };
 
+  // avoid triggering the default navigation onPress handler that
+  // would switch to the `language` tab. We only want to toggle the
+  // language and keep the current screen.
+  const { onPress, accessibilityState, ...rest } = props as any;
+
+  const focused = accessibilityState?.selected;
+  const color = focused
+    ? Colors[useColorScheme() ?? "light"].tabIconSelected
+    : Colors[useColorScheme() ?? "light"].tabIconDefault;
+
   return (
-    <TouchableOpacity style={styles.container} onPress={toggleLanguage}>
-      <View
-        style={[
-          styles.switcher,
-          { flexDirection: isRTL ? "row-reverse" : "row" },
-        ]}
-      >
-        <View style={[styles.option, language === "en" && styles.activeOption]}>
-          <Text
-            style={[styles.optionText, language === "en" && styles.activeText]}
-          >
-            EN
-          </Text>
-        </View>
-        <View style={[styles.option, language === "ar" && styles.activeOption]}>
-          <Text
-            style={[styles.optionText, language === "ar" && styles.activeText]}
-          >
-            AR
-          </Text>
-        </View>
-      </View>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={toggleLanguage}
+      {...rest}
+    >
+      <IconSymbol size={24} name="globe" color={color} />
+      <Text style={[styles.langLabel, { color }]}>
+        {language.toUpperCase()}
+      </Text>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
-  },
-  switcher: {
-    backgroundColor: "#f0f0f0",
-    borderRadius: 20,
-    padding: 2,
-  },
-  option: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 18,
+    paddingVertical: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  activeOption: {
-    backgroundColor: "#007AFF",
-  },
-  optionText: {
-    fontSize: 14,
+  langLabel: {
+    fontSize: 12,
     fontWeight: "600",
-    color: "#666",
-  },
-  activeText: {
-    color: "#fff",
+    marginTop: 2,
   },
 });
 
