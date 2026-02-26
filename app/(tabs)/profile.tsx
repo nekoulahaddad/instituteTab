@@ -1,4 +1,8 @@
-import { getStoredUser, saveStoredUser } from "@/app/services/api";
+import {
+  findUserByPhone,
+  getStoredUser,
+  saveStoredUser,
+} from "@/app/services/api";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import QRModal from "@/components/qr-modal";
 import { ThemedText } from "@/components/themed-text";
@@ -13,15 +17,70 @@ export default function ProfileScreen() {
   const { t } = useTranslation();
   const [user, setUser] = useState<any>(null);
   const [qrVisible, setQrVisible] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(true);
+  const [userStatus, setUserStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
-      const u = await getStoredUser();
-      setUser(u);
-    })();
-  }, []);
+    const checkUserStatus = async () => {
+      try {
+        setStatusLoading(true);
+        const storedUser = await getStoredUser();
 
-  if (!user) {
+        if (!storedUser) {
+          // User hasn't registered yet
+          setUser(null);
+          setUserStatus("not_registered");
+          return;
+        }
+
+        // Check status with backend
+        const userByPhone = await findUserByPhone(storedUser.phone);
+
+        if (userByPhone) {
+          // Update stored user with latest data from backend
+          await saveStoredUser(userByPhone);
+          setUser(userByPhone);
+          setUserStatus(userByPhone.status);
+
+          // Show alert based on status
+          if (!userByPhone.status) {
+            setUserStatus("not_registered");
+          }
+        }
+      } catch (error: any) {
+        console.error("Error checking user status:", error);
+        // If phone check fails, show stored user if available
+        const storedUser = await getStoredUser();
+        if (storedUser) {
+          setUser(storedUser);
+          setUserStatus("unknown");
+        } else {
+          setUserStatus("error");
+        }
+      } finally {
+        setStatusLoading(false);
+      }
+    };
+
+    checkUserStatus();
+  }, [t]);
+
+  const getStatusMessage = () => {
+    switch (userStatus) {
+      case "not_registered":
+        return t("notRegisteredMessage");
+      case "pending":
+        return t("registrationUnderReviewMessage");
+      case "canceled":
+        return t("registrationRejectedMessage");
+      case "error":
+        return t("statusCheckError");
+      default:
+        return t("notLoggedIn");
+    }
+  };
+
+  if (!user || userStatus !== "approved") {
     return (
       <ParallaxScrollView
         headerBackgroundColor={{ light: "#FFF3E0", dark: "#3E2723" }}
@@ -35,7 +94,9 @@ export default function ProfileScreen() {
         }
       >
         <ThemedView style={styles.container}>
-          <ThemedText>{t("notLoggedIn")}</ThemedText>
+          <ThemedText style={styles.statusMessage}>
+            {statusLoading ? t("loading") : getStatusMessage()}
+          </ThemedText>
         </ThemedView>
       </ParallaxScrollView>
     );
@@ -92,10 +153,6 @@ export default function ProfileScreen() {
         </ThemedText>
 
         <View style={{ marginTop: 12 }}>
-          <ModernButton title={t("save")} onPress={handleSave} />
-        </View>
-
-        <View style={{ marginTop: 12 }}>
           <ModernButton
             title={t("showQR")}
             onPress={() => setQrVisible(true)}
@@ -131,5 +188,10 @@ const styles = StyleSheet.create({
     height: 96,
     borderRadius: 48,
     marginBottom: 8,
+  },
+  statusMessage: {
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: "center",
   },
 });

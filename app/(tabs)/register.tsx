@@ -1,4 +1,4 @@
-import { registerUser } from "@/app/services/api";
+import { registerUser, saveStoredUser } from "@/app/services/api";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -11,6 +11,7 @@ import {
   UserRoles,
   UserStatuses,
 } from "@/constants/enums";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
@@ -18,6 +19,7 @@ import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
 import PhoneInput from "react-native-phone-number-input";
+import { v4 as uuidv4 } from "uuid";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -43,23 +45,37 @@ export default function RegisterScreen() {
   const [selectedCountryCode, setSelectedCountryCode] = useState("SY");
   const [loading, setLoading] = useState(false);
 
-  const generatePublicKey = () => {
-    // TODO: replace with device ID or other unique identifier later
-    return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  const generatePublicKey = async () => {
+    // Generate a persistent device ID stored in AsyncStorage
+    try {
+      let deviceId = await AsyncStorage.getItem("deviceId");
+      if (!deviceId) {
+        // First time - generate a new unique ID
+        deviceId = uuidv4();
+        await AsyncStorage.setItem("deviceId", deviceId);
+      }
+      return deviceId;
+    } catch (error) {
+      // Fallback if storage is unavailable
+      console.warn("Could not get device ID from storage:", error);
+      return uuidv4();
+    }
   };
 
   const handleSubmit = async (values: any) => {
     const payload = {
       ...values,
       status: UserStatuses[0],
-      publicKey: generatePublicKey(),
+      publicKey: await generatePublicKey(),
       profileImageUrl: "",
     } as any;
 
     try {
       setLoading(true);
-      await registerUser(payload);
-      Alert.alert(t("success"), t("registrationSuccess"));
+      const response = await registerUser(payload);
+      // Store user data for reference
+      await saveStoredUser(response.user || response);
+      Alert.alert(t("registrationSubmitted"), t("registrationUnderReview"));
       router.replace("/(tabs)/profile");
     } catch (err: any) {
       Alert.alert(t("error"), err.message || t("registrationError"));

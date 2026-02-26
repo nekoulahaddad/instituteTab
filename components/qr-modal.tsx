@@ -2,13 +2,7 @@ import { ThemedText } from "@/components/themed-text";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View
-} from "react-native";
+import { Modal, ScrollView, StyleSheet, Text, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import ModernButton from "./ui/modern-button";
 
@@ -50,25 +44,6 @@ export default function QRModal({ visible, onRequestClose, payload }: Props) {
                 <ThemedText style={styles.infoLabel}>
                   ID: <Text style={styles.infValue}>{payload.id}</Text>
                 </ThemedText>
-                <ThemedText style={styles.infoLabel}>
-                  Timestamp: <Text style={styles.infValue}>{payload.ts}</Text>
-                </ThemedText>
-                <ThemedText style={styles.infoLabel}>
-                  Signature:{" "}
-                  <Text style={styles.infValue}>
-                    {String(payload.signature).slice(0, 20)}...
-                  </Text>
-                </ThemedText>
-              </View>
-
-              <View style={styles.payloadContainer}>
-                <ThemedText style={styles.payloadLabel}>Payload</ThemedText>
-                <ScrollView
-                  style={styles.payloadScroll}
-                  showsVerticalScrollIndicator
-                >
-                  <Text style={styles.payloadText}>{value}</Text>
-                </ScrollView>
               </View>
 
               <View style={styles.actions}>
@@ -98,12 +73,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    width: "100%",
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 32,
   },
   container: {
     width: "100%",

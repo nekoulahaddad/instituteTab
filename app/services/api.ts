@@ -38,3 +38,15 @@ export async function getStoredUser() {
 export async function saveStoredUser(user: any) {
   await AsyncStorage.setItem("user", JSON.stringify(user));
 }
+
+export async function findUserByPhone(phone: string) {
+  try {
+    const response = await api.get(`/users/find-by-phone/${phone}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Find user by phone error:", error);
+    const message =
+      error.response?.data?.message || error.message || "User not found";
+    throw new Error(message);
+  }
+}
