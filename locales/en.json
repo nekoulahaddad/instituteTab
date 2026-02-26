@@ -9,5 +9,45 @@
   "confirm": "Confirm",
   "loading": "Loading...",
   "error": "Error",
-  "success": "Success"
+  "success": "Success",
+  "register": "Register",
+  "registering": "Registering...",
+  "profile": "Profile",
+  "qrCode": "QR Code",
+  "showQR": "Show QR",
+  "close": "Close",
+  "notLoggedIn": "Not logged in",
+  "registrationSuccess": "Registered successfully",
+  "registrationError": "Registration failed",
+  "validationError": "Please fill required fields",
+  "profileSaved": "Profile saved locally.",
+  "arabicName": "Arabic Name",
+  "englishName": "English Name",
+  "phone": "Phone",
+  "role": "Role",
+  "language": "Language",
+  "level": "Level",
+  "branch": "Branch",
+  "status": "Status",
+  "required": "Required field",
+  "roles": {
+    "STUDENT": "Student",
+    "TEACHER": "Teacher",
+    "ADMIN": "Admin"
+  },
+  "levels": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
+  },
+  "branches": {
+    "Main Branch": "Main Branch",
+    "Branch B": "Branch B"
+  },
+  "explore": "Explore",
+  "step": "Step",
+  "tryIt": "Try it",
+  "edit": "Edit",
+  "explore": "Explore",
+  "getStart": "Get a fresh start"
 }

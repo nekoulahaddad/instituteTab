@@ -9,5 +9,43 @@
   "confirm": "تأكيد",
   "loading": "جاري التحميل...",
   "error": "خطأ",
-  "success": "تم بنجاح"
+  "success": "تم بنجاح",
+  "register": "تسجيل",
+  "registering": "جاري التسجيل...",
+  "profile": "الملف الشخصي",
+  "qrCode": "رمز QR",
+  "showQR": "عرض QR",
+  "close": "إغلاق",
+  "notLoggedIn": "لم تقم بتسجيل الدخول",
+  "registrationSuccess": "تم التسجيل بنجاح",
+  "registrationError": "فشل التسجيل",
+  "validationError": "يرجى ملء جميع الحقول المطلوبة",
+  "profileSaved": "تم حفظ الملف الشخصي محلياً",
+  "arabicName": "الاسم بالعربي",
+  "englishName": "الاسم بالإنجليزي",
+  "phone": "رقم الهاتف",
+  "role": "الدور",
+  "language": "اللغة",
+  "level": "المستوى",
+  "branch": "الفرع",
+  "status": "الحالة",
+  "required": "حقل مطلوب",
+  "roles": {
+    "STUDENT": "طالب",
+    "TEACHER": "معلم",
+    "ADMIN": "مسؤول"
+  },
+  "levels": {
+    "beginner": "مبتدئ",
+    "intermediate": "متوسط",
+    "advanced": "متقدم"
+  },
+  "branches": {
+    "Main Branch": "الفرع الرئيسي",
+    "Branch B": "الفرع ب"
+  },
+  "explore": "استكشاف",
+  "step": "خطوة",
+  "tryIt": "جربها",
+  "getStart": "ابدأ من جديد"
 }
