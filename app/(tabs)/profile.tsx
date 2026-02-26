@@ -122,9 +122,6 @@ export default function ProfileScreen() {
         {user.profileImageUrl ? (
           <Image source={{ uri: user.profileImageUrl }} style={styles.avatar} />
         ) : null}
-        <ThemedText type="title">
-          {user.englishName || user.arabicName}
-        </ThemedText>
         <ThemedText>
           {t("arabicName")}: {user.arabicName}
         </ThemedText>
@@ -160,7 +157,6 @@ export default function ProfileScreen() {
           payload={{
             id: user.id || user._id || user.userId,
             ts: Date.now(),
-            signature: user.publicKey || "n/a",
           }}
         />
       </ThemedView>

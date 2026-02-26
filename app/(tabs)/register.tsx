@@ -24,7 +24,6 @@ import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
 import PhoneInput from "react-native-phone-number-input";
-import { v4 as uuidv4 } from "uuid";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -129,23 +128,6 @@ export default function RegisterScreen() {
     }, [loadUserData]),
   );
 
-  const generatePublicKey = async () => {
-    // Generate a persistent device ID stored in AsyncStorage
-    try {
-      let deviceId = await AsyncStorage.getItem("deviceId");
-      if (!deviceId) {
-        // First time - generate a new unique ID
-        deviceId = uuidv4();
-        await AsyncStorage.setItem("deviceId", deviceId);
-      }
-      return deviceId;
-    } catch (error) {
-      // Fallback if storage is unavailable
-      console.warn("Could not get device ID from storage:", error);
-      return uuidv4();
-    }
-  };
-
   const handleSubmit = async (values: any) => {
     try {
       setLoading(true);
@@ -164,7 +146,6 @@ export default function RegisterScreen() {
         const payload = {
           ...values,
           status: UserStatuses[0],
-          publicKey: await generatePublicKey(),
           profileImageUrl: "",
         } as any;
         const response = await registerUser(payload);
