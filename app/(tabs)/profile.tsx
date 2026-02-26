@@ -154,10 +154,7 @@ export default function ProfileScreen() {
         <QRModal
           visible={qrVisible}
           onRequestClose={() => setQrVisible(false)}
-          payload={{
-            id: user.id || user._id || user.userId,
-            ts: Date.now(),
-          }}
+          userId={user.id || user._id || user.userId}
         />
       </ThemedView>
     </ParallaxScrollView>

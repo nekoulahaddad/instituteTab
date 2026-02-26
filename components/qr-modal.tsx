@@ -9,12 +9,22 @@ import ModernButton from "./ui/modern-button";
 interface Props {
   visible: boolean;
   onRequestClose: () => void;
-  payload: any;
+  userId: string;
 }
 
-export default function QRModal({ visible, onRequestClose, payload }: Props) {
+export default function QRModal({ visible, onRequestClose, userId }: Props) {
   const { t } = useTranslation();
-  const value = JSON.stringify(payload);
+  const [ts, setTs] = React.useState(Date.now());
+
+  // update timestamp every 5 seconds
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setTs(Date.now());
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const value = JSON.stringify({ id: userId, ts });
 
   return (
     <Modal
@@ -42,7 +52,7 @@ export default function QRModal({ visible, onRequestClose, payload }: Props) {
 
               <View style={styles.infoContainer}>
                 <ThemedText style={styles.infoLabel}>
-                  ID: <Text style={styles.infValue}>{payload.id}</Text>
+                  ID: <Text style={styles.infValue}>{userId}</Text>
                 </ThemedText>
               </View>
 
