@@ -324,19 +324,20 @@ const styles = StyleSheet.create({
   errorText: {
     color: "#FF3B30",
     fontSize: 12,
-    marginTop: 4,
+    marginTop: -6,
   },
   phoneInputContainer: {
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.1)",
     borderRadius: 8,
     backgroundColor: "rgba(255,255,255,0.8)",
-    height: 50,
+    height: 40,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 1,
+    paddingVertical: 10,
   },
   phoneTextContainer: {
     paddingVertical: 0,
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   phoneCodeText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
   },
 });
