@@ -50,3 +50,25 @@ export async function findUserByPhone(phone: string) {
     throw new Error(message);
   }
 }
+
+export async function updateRegistration(id: string, payload: any) {
+  try {
+    console.log("Updating registration with ID:", id, "payload:", payload);
+    const response = await api.patch(`/registration/${id}`, payload);
+    console.log("Update registration response:", response.data);
+
+    // Update stored user
+    if (response.data.user) {
+      await AsyncStorage.setItem("user", JSON.stringify(response.data.user));
+    } else if (response.data.id || response.data._id) {
+      await AsyncStorage.setItem("user", JSON.stringify(response.data));
+    }
+
+    return response.data;
+  } catch (error: any) {
+    console.error("Update registration error:", error);
+    const message =
+      error.response?.data?.message || error.message || "Update failed";
+    throw new Error(message);
+  }
+}

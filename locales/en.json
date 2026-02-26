@@ -44,6 +44,9 @@
   "registrationRejectedMessage": "Your registration application has been rejected. Please contact support for more information",
   "notRegisteredMessage": "You haven't registered yet. Please register to continue",
   "statusCheckError": "Unable to check registration status. Please try again later",
+  "updateInformation": "Update Information",
+  "updating": "Updating...",
+  "registrationUpdated": "Registration information updated successfully",
   "roles": {
     "student": "Student",
     "teacher": "Teacher",

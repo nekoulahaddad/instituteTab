@@ -1,4 +1,9 @@
-import { registerUser, saveStoredUser } from "@/app/services/api";
+import {
+  findUserByPhone,
+  registerUser,
+  saveStoredUser,
+  updateRegistration,
+} from "@/app/services/api";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -13,8 +18,8 @@ import {
 } from "@/constants/enums";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
@@ -24,11 +29,16 @@ import { v4 as uuidv4 } from "uuid";
 export default function RegisterScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const [isUpdate, setIsUpdate] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
   // form state will be managed by react-hook-form
   const {
     control,
     handleSubmit: onFormSubmit,
     formState: { errors },
+    setValue,
+    reset,
   } = useForm({
     defaultValues: {
       arabicName: "",
@@ -44,6 +54,80 @@ export default function RegisterScreen() {
   const phoneInputRef = useRef<PhoneInput>(null);
   const [selectedCountryCode, setSelectedCountryCode] = useState("SY");
   const [loading, setLoading] = useState(false);
+
+  const loadUserData = useCallback(async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem("user");
+      if (!storedUser) {
+        // No user stored, reset form
+        setIsUpdate(false);
+        setUserId(null);
+        reset();
+        return;
+      }
+
+      const user = JSON.parse(storedUser);
+
+      // Find user by phone to get latest data
+      if (user.phone) {
+        const userByPhone = await findUserByPhone(user.phone);
+        if (userByPhone && userByPhone.status !== "not_found") {
+          // User exists, populate form with their data
+          await saveStoredUser(userByPhone);
+
+          setValue("arabicName", userByPhone.arabicName || "");
+          setValue("englishName", userByPhone.englishName || "");
+          setValue("phone", userByPhone.phone || "");
+          setValue("role", userByPhone.role || UserRoles[0]);
+          setValue("language", userByPhone.language || Languages[0]);
+          setValue("level", userByPhone.level || Levels[0]);
+          setValue("branchId", userByPhone.branchId || Branches[0].id);
+
+          setUserId(userByPhone._id || userByPhone.id);
+          setIsUpdate(true);
+          return;
+        }
+      }
+
+      // User not found on backend, but exists in storage - populate form
+      setValue("arabicName", user.arabicName || "");
+      setValue("englishName", user.englishName || "");
+      setValue("phone", user.phone || "");
+      setValue("role", user.role || UserRoles[0]);
+      setValue("language", user.language || Languages[0]);
+      setValue("level", user.level || Levels[0]);
+      setValue("branchId", user.branchId || Branches[0].id);
+
+      setUserId(user._id || user.id);
+      setIsUpdate(false);
+    } catch (error) {
+      console.error("Error loading user data:", error);
+      // Load from storage at least
+      try {
+        const storedUser = await AsyncStorage.getItem("user");
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          setValue("arabicName", user.arabicName || "");
+          setValue("englishName", user.englishName || "");
+          setValue("phone", user.phone || "");
+          setValue("role", user.role || UserRoles[0]);
+          setValue("language", user.language || Languages[0]);
+          setValue("level", user.level || Levels[0]);
+          setValue("branchId", user.branchId || Branches[0].id);
+          setUserId(user._id || user.id);
+        }
+      } catch (e) {
+        console.error("Error setting stored user:", e);
+      }
+    }
+  }, [setValue, reset]);
+
+  // Load user data when tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      loadUserData();
+    }, [loadUserData]),
+  );
 
   const generatePublicKey = async () => {
     // Generate a persistent device ID stored in AsyncStorage
@@ -63,19 +147,31 @@ export default function RegisterScreen() {
   };
 
   const handleSubmit = async (values: any) => {
-    const payload = {
-      ...values,
-      status: UserStatuses[0],
-      publicKey: await generatePublicKey(),
-      profileImageUrl: "",
-    } as any;
-
     try {
       setLoading(true);
-      const response = await registerUser(payload);
-      // Store user data for reference
-      await saveStoredUser(response.user || response);
-      Alert.alert(t("registrationSubmitted"), t("registrationUnderReview"));
+
+      if (isUpdate && userId) {
+        // Update existing registration
+        const payload = {
+          ...values,
+          profileImageUrl: "",
+        };
+        const response = await updateRegistration(userId, payload);
+        await saveStoredUser(response.user || response);
+        Alert.alert(t("success"), t("registrationUpdated"));
+      } else {
+        // New registration
+        const payload = {
+          ...values,
+          status: UserStatuses[0],
+          publicKey: await generatePublicKey(),
+          profileImageUrl: "",
+        } as any;
+        const response = await registerUser(payload);
+        await saveStoredUser(response.user || response);
+        Alert.alert(t("registrationSubmitted"), t("registrationUnderReview"));
+      }
+
       router.replace("/(tabs)/profile");
     } catch (err: any) {
       Alert.alert(t("error"), err.message || t("registrationError"));
@@ -98,7 +194,7 @@ export default function RegisterScreen() {
     >
       <ThemedView style={styles.container}>
         <ThemedText type="title" style={styles.title}>
-          {t("register")}
+          {isUpdate ? t("updateInformation") : t("register")}
         </ThemedText>
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("arabicName")} *</ThemedText>
@@ -284,7 +380,15 @@ export default function RegisterScreen() {
 
         <View style={styles.submitButton}>
           <ModernButton
-            title={loading ? t("registering") : t("register")}
+            title={
+              loading
+                ? isUpdate
+                  ? t("updating")
+                  : t("registering")
+                : isUpdate
+                  ? t("updateInformation")
+                  : t("register")
+            }
             onPress={onFormSubmit(handleSubmit)}
             disabled={loading}
           />

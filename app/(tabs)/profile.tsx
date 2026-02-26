@@ -9,9 +9,10 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import ModernButton from "@/components/ui/modern-button";
 import { Image as ExpoImage } from "expo-image";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Image, StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -20,50 +21,53 @@ export default function ProfileScreen() {
   const [statusLoading, setStatusLoading] = useState(true);
   const [userStatus, setUserStatus] = useState<string | null>(null);
 
-  useEffect(() => {
-    const checkUserStatus = async () => {
-      try {
-        setStatusLoading(true);
-        const storedUser = await getStoredUser();
+  const checkUserStatus = useCallback(async () => {
+    try {
+      setStatusLoading(true);
+      const storedUser = await getStoredUser();
 
-        if (!storedUser) {
-          // User hasn't registered yet
-          setUser(null);
-          setUserStatus("not_registered");
-          return;
-        }
-
-        // Check status with backend
-        const userByPhone = await findUserByPhone(storedUser.phone);
-
-        if (userByPhone) {
-          // Update stored user with latest data from backend
-          await saveStoredUser(userByPhone);
-          setUser(userByPhone);
-          setUserStatus(userByPhone.status);
-
-          // Show alert based on status
-          if (!userByPhone.status) {
-            setUserStatus("not_registered");
-          }
-        }
-      } catch (error: any) {
-        console.error("Error checking user status:", error);
-        // If phone check fails, show stored user if available
-        const storedUser = await getStoredUser();
-        if (storedUser) {
-          setUser(storedUser);
-          setUserStatus("unknown");
-        } else {
-          setUserStatus("error");
-        }
-      } finally {
-        setStatusLoading(false);
+      if (!storedUser) {
+        // User hasn't registered yet
+        setUser(null);
+        setUserStatus("not_registered");
+        return;
       }
-    };
 
-    checkUserStatus();
-  }, [t]);
+      // Check status with backend
+      const userByPhone = await findUserByPhone(storedUser.phone);
+
+      if (userByPhone) {
+        // Update stored user with latest data from backend
+        await saveStoredUser(userByPhone);
+        setUser(userByPhone);
+        setUserStatus(userByPhone.status);
+
+        // Show alert based on status
+        if (!userByPhone.status) {
+          setUserStatus("not_registered");
+        }
+      }
+    } catch (error: any) {
+      console.error("Error checking user status:", error);
+      // If phone check fails, show stored user if available
+      const storedUser = await getStoredUser();
+      if (storedUser) {
+        setUser(storedUser);
+        setUserStatus("unknown");
+      } else {
+        setUserStatus("error");
+      }
+    } finally {
+      setStatusLoading(false);
+    }
+  }, []);
+
+  // Check status every time this tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      checkUserStatus();
+    }, [checkUserStatus]),
+  );
 
   const getStatusMessage = () => {
     switch (userStatus) {
@@ -101,15 +105,6 @@ export default function ProfileScreen() {
       </ParallaxScrollView>
     );
   }
-
-  const handleSave = async () => {
-    try {
-      await saveStoredUser(user);
-      Alert.alert(t("success"), t("profileSaved"));
-    } catch (e: any) {
-      Alert.alert(t("error"), e.message || t("error"));
-    }
-  };
 
   return (
     <ParallaxScrollView

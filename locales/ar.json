@@ -44,6 +44,9 @@
   "registrationRejectedMessage": "تم رفض طلب التسجيل الخاص بك. يرجى التواصل مع الدعم للحصول على مزيد من المعلومات",
   "notRegisteredMessage": "لم تقم بالتسجيل بعد. يرجى التسجيل للمتابعة",
   "statusCheckError": "تعذر التحقق من حالة التسجيل. يرجى المحاولة لاحقاً",
+  "updateInformation": "تحديث البيانات",
+  "updating": "جاري التحديث...",
+  "registrationUpdated": "تم تحديث بيانات التسجيل بنجاح",
   "roles": {
     "student": "طالب",
     "teacher": "معلم",
