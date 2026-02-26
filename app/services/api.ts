@@ -1,31 +1,33 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
-const BASE_URL = (global as any).BASE_URL || "http://localhost:3000";
+const BASE_URL = (global as any).BASE_URL || "http://192.168.0.103:3000";
+
+const api = axios.create({
+  baseURL: BASE_URL,
+  timeout: 10000,
+});
 
 export async function registerUser(payload: any) {
-  const res = await fetch(`${BASE_URL}/api/users`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  try {
+    console.log("Registering user with payload:", payload, BASE_URL);
+    const response = await api.post("/registration", payload);
+    console.log("Registration response:", response.data);
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "Registration failed");
+    // If backend returns token or user, store minimal user
+    if (response.data.user) {
+      await AsyncStorage.setItem("user", JSON.stringify(response.data.user));
+    } else if (response.data.id) {
+      await AsyncStorage.setItem("user", JSON.stringify(response.data));
+    }
+
+    return response.data;
+  } catch (error: any) {
+    console.error("Registration error:", error);
+    const message =
+      error.response?.data?.message || error.message || "Registration failed";
+    throw new Error(message);
   }
-
-  const data = await res.json();
-
-  // If backend returns token or user, store minimal user
-  if (data.user) {
-    await AsyncStorage.setItem("user", JSON.stringify(data.user));
-  } else if (data.id) {
-    await AsyncStorage.setItem("user", JSON.stringify(data));
-  }
-
-  return data;
 }
 
 export async function getStoredUser() {

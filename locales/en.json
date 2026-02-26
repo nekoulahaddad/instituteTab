@@ -31,9 +31,10 @@
   "status": "Status",
   "required": "Required field",
   "roles": {
-    "STUDENT": "Student",
-    "TEACHER": "Teacher",
-    "ADMIN": "Admin"
+    "student": "Student",
+    "teacher": "Teacher",
+    "employee": "Employee",
+    "admin": "Admin"
   },
   "levels": {
     "beginner": "Beginner",

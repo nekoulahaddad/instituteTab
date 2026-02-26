@@ -31,9 +31,10 @@
   "status": "الحالة",
   "required": "حقل مطلوب",
   "roles": {
-    "STUDENT": "طالب",
-    "TEACHER": "معلم",
-    "ADMIN": "مسؤول"
+    "student": "طالب",
+    "teacher": "معلم",
+    "admin": "مسؤول",
+    "employee": "موظف"
   },
   "levels": {
     "beginner": "مبتدئ",

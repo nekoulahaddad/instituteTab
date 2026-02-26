@@ -1,7 +1,7 @@
-export const UserRoles = ["STUDENT", "TEACHER", "ADMIN"] as const;
+export const UserRoles = ["student", "teacher", "employee"] as const;
 export type UserRole = (typeof UserRoles)[number];
 
-export const UserStatuses = ["PENDING", "ACTIVE", "SUSPENDED"] as const;
+export const UserStatuses = ["pending", "approved", "canceled"] as const;
 export type UserStatus = (typeof UserStatuses)[number];
 
 export const Languages = ["en", "ar"] as const;

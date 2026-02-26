@@ -29,15 +29,19 @@ export default function RegisterScreen() {
   const [branchId, setBranchId] = useState(Branches[0].id);
   const [loading, setLoading] = useState(false);
 
+  const [errors, setErrors] = useState<{ [key: string]: boolean }>({});
+
   const handleSubmit = async () => {
-    if (
-      !arabicName ||
-      !englishName ||
-      !role ||
-      !level ||
-      !branchId ||
-      !language
-    ) {
+    const newErrors: { [key: string]: boolean } = {};
+    if (!arabicName) newErrors.arabicName = true;
+    if (!englishName) newErrors.englishName = true;
+    if (!role) newErrors.role = true;
+    if (!language) newErrors.language = true;
+    if (!level) newErrors.level = true;
+    if (!branchId) newErrors.branchId = true;
+
+    if (Object.keys(newErrors).length) {
+      setErrors(newErrors);
       Alert.alert(t("error"), t("validationError"));
       return;
     }
@@ -90,27 +94,36 @@ export default function RegisterScreen() {
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("arabicName")} *</ThemedText>
           <TextInput
-            style={styles.input}
+            style={[styles.input, errors.arabicName && styles.errorInput]}
             value={arabicName}
-            onChangeText={setArabicName}
+            onChangeText={(text) => {
+              setArabicName(text);
+              setErrors((e) => ({ ...e, arabicName: false }));
+            }}
           />
         </View>
 
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("englishName")} *</ThemedText>
           <TextInput
-            style={styles.input}
+            style={[styles.input, errors.englishName && styles.errorInput]}
             value={englishName}
-            onChangeText={setEnglishName}
+            onChangeText={(text) => {
+              setEnglishName(text);
+              setErrors((e) => ({ ...e, englishName: false }));
+            }}
           />
         </View>
 
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("phone")}</ThemedText>
           <TextInput
-            style={styles.input}
+            style={[styles.input, errors.phone && styles.errorInput]}
             value={phone}
-            onChangeText={setPhone}
+            onChangeText={(text) => {
+              setPhone(text);
+              setErrors((e) => ({ ...e, phone: false }));
+            }}
             keyboardType="phone-pad"
           />
         </View>
@@ -123,7 +136,11 @@ export default function RegisterScreen() {
               value: r,
             }))}
             selectedValue={role}
-            onValueChange={(v) => setRole(v)}
+            onValueChange={(v) => {
+              setRole(v);
+              setErrors((e) => ({ ...e, role: false }));
+            }}
+            error={!!errors.role}
           />
         </View>
 
@@ -135,7 +152,11 @@ export default function RegisterScreen() {
               value: l,
             }))}
             selectedValue={language}
-            onValueChange={(v) => setLanguage(v)}
+            onValueChange={(v) => {
+              setLanguage(v);
+              setErrors((e) => ({ ...e, language: false }));
+            }}
+            error={!!errors.language}
           />
         </View>
 
@@ -147,7 +168,11 @@ export default function RegisterScreen() {
               value: lv,
             }))}
             selectedValue={level}
-            onValueChange={(v) => setLevel(v)}
+            onValueChange={(v) => {
+              setLevel(v);
+              setErrors((e) => ({ ...e, level: false }));
+            }}
+            error={!!errors.level}
           />
         </View>
 
@@ -156,7 +181,11 @@ export default function RegisterScreen() {
           <SelectInput
             options={Branches.map((b) => ({ label: b.name, value: b.id }))}
             selectedValue={branchId}
-            onValueChange={(v) => setBranchId(v)}
+            onValueChange={(v) => {
+              setBranchId(v);
+              setErrors((e) => ({ ...e, branchId: false }));
+            }}
+            error={!!errors.branchId}
           />
         </View>
 
@@ -217,5 +246,8 @@ const styles = StyleSheet.create({
   submitButton: {
     marginTop: 16,
     marginBottom: 16,
+  },
+  errorInput: {
+    borderColor: "#FF3B30",
   },
 });

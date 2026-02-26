@@ -20,12 +20,14 @@ interface SelectInputProps {
   options: Option[];
   selectedValue: string;
   onValueChange: (v: string) => void;
+  error?: boolean;
 }
 
 export default function SelectInput({
   options,
   selectedValue,
   onValueChange,
+  error,
 }: SelectInputProps) {
   const [visible, setVisible] = useState(false);
   const bg = useThemeColor({}, "background");
@@ -37,7 +39,7 @@ export default function SelectInput({
   return (
     <>
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, error && styles.errorBorder]}
         onPress={() => setVisible(true)}
       >
         <Text style={[styles.buttonText, { color }]}>
@@ -125,5 +127,8 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 16,
     fontWeight: "500",
+  },
+  errorBorder: {
+    borderColor: "#FF3B30",
   },
 });
