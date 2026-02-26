@@ -40,6 +40,7 @@ export default function RegisterScreen() {
   });
 
   const phoneInputRef = useRef<PhoneInput>(null);
+  const [selectedCountryCode, setSelectedCountryCode] = useState("SY");
   const [loading, setLoading] = useState(false);
 
   const generatePublicKey = () => {
@@ -160,10 +161,13 @@ export default function RegisterScreen() {
               <PhoneInput
                 ref={phoneInputRef}
                 defaultValue={value || ""}
-                defaultCode="SY"
+                defaultCode={selectedCountryCode as any}
                 layout="first"
                 onChangeText={(text) => onChange(text)}
                 onChangeFormattedText={(text) => onChange(text)}
+                onChangeCountry={(country) =>
+                  setSelectedCountryCode(country.cca2)
+                }
                 containerStyle={[
                   styles.phoneInputContainer,
                   errors.phone && { borderColor: "#FF3B30" },
@@ -171,6 +175,8 @@ export default function RegisterScreen() {
                 textContainerStyle={styles.phoneTextContainer}
                 textInputStyle={styles.phoneTextInput}
                 codeTextStyle={styles.phoneCodeText}
+                flagButtonStyle={styles.flagButtonStyle}
+                countryPickerButtonStyle={styles.countryPickerButtonStyle}
               />
             )}
           />
@@ -331,13 +337,13 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0,0,0,0.1)",
     borderRadius: 8,
     backgroundColor: "rgba(255,255,255,0.8)",
-    height: 40,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 1,
     paddingVertical: 10,
+    maxWidth: "100%",
   },
   phoneTextContainer: {
     paddingVertical: 0,
@@ -350,6 +356,25 @@ const styles = StyleSheet.create({
   },
   phoneCodeText: {
     fontSize: 16,
+    paddingHorizontal: 0,
     fontWeight: "600",
+  },
+  flagButtonStyle: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    marginRight: 2,
+    minWidth: 28,
+    maxWidth: 28,
+    width: 28,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  countryPickerButtonStyle: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    marginHorizontal: 0,
+    width: "auto",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
