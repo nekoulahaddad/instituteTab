@@ -30,6 +30,12 @@
   "branch": "الفرع",
   "status": "الحالة",
   "required": "حقل مطلوب",
+  "arabicNameRequired": "الاسم بالعربي مطلوب",
+  "arabicNameArabicOnly": "يجب أن يحتوي الاسم العربي على حروف عربية فقط",
+  "englishNameRequired": "الاسم بالإنجليزي مطلوب",
+  "englishNameEnglishOnly": "يجب أن يحتوي الاسم الإنجليزي على حروف إنجليزية فقط",
+  "phoneRequired": "رقم الهاتف مطلوب",
+  "phoneInvalid": "رقم الهاتف غير صحيح",
   "roles": {
     "student": "طالب",
     "teacher": "معلم",

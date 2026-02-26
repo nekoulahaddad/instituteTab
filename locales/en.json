@@ -30,6 +30,12 @@
   "branch": "Branch",
   "status": "Status",
   "required": "Required field",
+  "arabicNameRequired": "Arabic name is required",
+  "arabicNameArabicOnly": "Arabic name must contain only Arabic letters",
+  "englishNameRequired": "English name is required",
+  "englishNameEnglishOnly": "English name must contain only English letters",
+  "phoneRequired": "Phone number is required",
+  "phoneInvalid": "Phone number is invalid",
   "roles": {
     "student": "Student",
     "teacher": "Teacher",

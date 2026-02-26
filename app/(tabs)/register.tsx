@@ -5,60 +5,52 @@ import { ThemedView } from "@/components/themed-view";
 import ModernButton from "@/components/ui/modern-button";
 import SelectInput from "@/components/ui/select-input";
 import {
-    Branches,
-    Languages,
-    Levels,
-    UserRoles,
-    UserStatuses,
+  Branches,
+  Languages,
+  Levels,
+  UserRoles,
+  UserStatuses,
 } from "@/constants/enums";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
+import PhoneInput from "react-native-phone-number-input";
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [arabicName, setArabicName] = useState("");
-  const [englishName, setEnglishName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [role, setRole] = useState(UserRoles[0]);
-  const [language, setLanguage] = useState(Languages[0]);
-  const [level, setLevel] = useState(Levels[0]);
-  const [branchId, setBranchId] = useState(Branches[0].id);
+  // form state will be managed by react-hook-form
+  const {
+    control,
+    handleSubmit: onFormSubmit,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      arabicName: "",
+      englishName: "",
+      phone: "",
+      role: UserRoles[0],
+      language: Languages[0],
+      level: Levels[0],
+      branchId: Branches[0].id,
+    },
+  });
+
+  const phoneInputRef = useRef<PhoneInput>(null);
   const [loading, setLoading] = useState(false);
 
-  const [errors, setErrors] = useState<{ [key: string]: boolean }>({});
+  const generatePublicKey = () => {
+    // TODO: replace with device ID or other unique identifier later
+    return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  };
 
-  const handleSubmit = async () => {
-    const newErrors: { [key: string]: boolean } = {};
-    if (!arabicName) newErrors.arabicName = true;
-    if (!englishName) newErrors.englishName = true;
-    if (!role) newErrors.role = true;
-    if (!language) newErrors.language = true;
-    if (!level) newErrors.level = true;
-    if (!branchId) newErrors.branchId = true;
-
-    if (Object.keys(newErrors).length) {
-      setErrors(newErrors);
-      Alert.alert(t("error"), t("validationError"));
-      return;
-    }
-
-    const generatePublicKey = () => {
-      return Math.random().toString(36).substring(2) + Date.now().toString(36);
-    };
-
+  const handleSubmit = async (values: any) => {
     const payload = {
-      arabicName,
-      englishName,
-      phone,
-      role,
+      ...values,
       status: UserStatuses[0],
-      language,
-      level,
-      branchId,
       publicKey: generatePublicKey(),
       profileImageUrl: "",
     } as any;
@@ -93,106 +85,185 @@ export default function RegisterScreen() {
         </ThemedText>
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("arabicName")} *</ThemedText>
-          <TextInput
-            style={[styles.input, errors.arabicName && styles.errorInput]}
-            value={arabicName}
-            onChangeText={(text) => {
-              setArabicName(text);
-              setErrors((e) => ({ ...e, arabicName: false }));
+          <Controller
+            control={control}
+            name="arabicName"
+            rules={{
+              required: true,
+              pattern: {
+                value: /^[\u0600-\u06FF\s]+$/,
+                message: t("arabicNameArabicOnly"),
+              },
             }}
+            render={({ field: { value, onChange } }) => (
+              <TextInput
+                style={[styles.input, errors.arabicName && styles.errorInput]}
+                value={value}
+                onChangeText={onChange}
+                keyboardType="default"
+              />
+            )}
           />
+          {errors.arabicName && (
+            <ThemedText style={styles.errorText}>
+              {errors.arabicName.type === "required"
+                ? t("arabicNameRequired")
+                : t("arabicNameArabicOnly")}
+            </ThemedText>
+          )}
         </View>
 
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("englishName")} *</ThemedText>
-          <TextInput
-            style={[styles.input, errors.englishName && styles.errorInput]}
-            value={englishName}
-            onChangeText={(text) => {
-              setEnglishName(text);
-              setErrors((e) => ({ ...e, englishName: false }));
+          <Controller
+            control={control}
+            name="englishName"
+            rules={{
+              required: true,
+              pattern: {
+                value: /^[A-Za-z\s]+$/,
+                message: t("englishNameEnglishOnly"),
+              },
             }}
+            render={({ field: { value, onChange } }) => (
+              <TextInput
+                style={[styles.input, errors.englishName && styles.errorInput]}
+                value={value}
+                onChangeText={onChange}
+                keyboardType="ascii-capable"
+              />
+            )}
           />
+          {errors.englishName && (
+            <ThemedText style={styles.errorText}>
+              {errors.englishName.type === "required"
+                ? t("englishNameRequired")
+                : t("englishNameEnglishOnly")}
+            </ThemedText>
+          )}
         </View>
 
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("phone")}</ThemedText>
-          <TextInput
-            style={[styles.input, errors.phone && styles.errorInput]}
-            value={phone}
-            onChangeText={(text) => {
-              setPhone(text);
-              setErrors((e) => ({ ...e, phone: false }));
+          <Controller
+            control={control}
+            name="phone"
+            rules={{
+              required: true,
+              validate: (value) => {
+                if (!value) return true;
+                const isValid = phoneInputRef.current?.isValidNumber(value);
+                return isValid || t("phoneInvalid");
+              },
             }}
-            keyboardType="phone-pad"
+            render={({ field: { value, onChange } }) => (
+              <PhoneInput
+                ref={phoneInputRef}
+                defaultValue={value || ""}
+                defaultCode="SY"
+                layout="first"
+                onChangeText={(text) => onChange(text)}
+                onChangeFormattedText={(text) => onChange(text)}
+                containerStyle={[
+                  styles.phoneInputContainer,
+                  errors.phone && { borderColor: "#FF3B30" },
+                ]}
+                textContainerStyle={styles.phoneTextContainer}
+                textInputStyle={styles.phoneTextInput}
+                codeTextStyle={styles.phoneCodeText}
+              />
+            )}
           />
+          {errors.phone && (
+            <ThemedText style={styles.errorText}>
+              {errors.phone.type === "required"
+                ? t("phoneRequired")
+                : errors.phone.message || t("phoneInvalid")}
+            </ThemedText>
+          )}
         </View>
 
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("role")}</ThemedText>
-          <SelectInput
-            options={UserRoles.map((r) => ({
-              label: t(`roles.${r}`),
-              value: r,
-            }))}
-            selectedValue={role}
-            onValueChange={(v) => {
-              setRole(v);
-              setErrors((e) => ({ ...e, role: false }));
-            }}
-            error={!!errors.role}
+          <Controller
+            control={control}
+            name="role"
+            rules={{ required: true }}
+            render={({ field: { value, onChange } }) => (
+              <SelectInput
+                options={UserRoles.map((r) => ({
+                  label: t(`roles.${r}`),
+                  value: r,
+                }))}
+                selectedValue={value}
+                onValueChange={onChange}
+                error={!!errors.role}
+              />
+            )}
           />
         </View>
 
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("language")}</ThemedText>
-          <SelectInput
-            options={Languages.map((l) => ({
-              label: l.toUpperCase(),
-              value: l,
-            }))}
-            selectedValue={language}
-            onValueChange={(v) => {
-              setLanguage(v);
-              setErrors((e) => ({ ...e, language: false }));
-            }}
-            error={!!errors.language}
+          <Controller
+            control={control}
+            name="language"
+            rules={{ required: true }}
+            render={({ field: { value, onChange } }) => (
+              <SelectInput
+                options={Languages.map((l) => ({
+                  label: l.toUpperCase(),
+                  value: l,
+                }))}
+                selectedValue={value}
+                onValueChange={onChange}
+                error={!!errors.language}
+              />
+            )}
           />
         </View>
 
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("level")}</ThemedText>
-          <SelectInput
-            options={Levels.map((lv) => ({
-              label: t(`levels.${lv}`),
-              value: lv,
-            }))}
-            selectedValue={level}
-            onValueChange={(v) => {
-              setLevel(v);
-              setErrors((e) => ({ ...e, level: false }));
-            }}
-            error={!!errors.level}
+          <Controller
+            control={control}
+            name="level"
+            rules={{ required: true }}
+            render={({ field: { value, onChange } }) => (
+              <SelectInput
+                options={Levels.map((lv) => ({
+                  label: t(`levels.${lv}`),
+                  value: lv,
+                }))}
+                selectedValue={value}
+                onValueChange={onChange}
+                error={!!errors.level}
+              />
+            )}
           />
         </View>
 
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("branch")}</ThemedText>
-          <SelectInput
-            options={Branches.map((b) => ({ label: b.name, value: b.id }))}
-            selectedValue={branchId}
-            onValueChange={(v) => {
-              setBranchId(v);
-              setErrors((e) => ({ ...e, branchId: false }));
-            }}
-            error={!!errors.branchId}
+          <Controller
+            control={control}
+            name="branchId"
+            rules={{ required: true }}
+            render={({ field: { value, onChange } }) => (
+              <SelectInput
+                options={Branches.map((b) => ({ label: b.name, value: b.id }))}
+                selectedValue={value}
+                onValueChange={onChange}
+                error={!!errors.branchId}
+              />
+            )}
           />
         </View>
 
         <View style={styles.submitButton}>
           <ModernButton
             title={loading ? t("registering") : t("register")}
-            onPress={handleSubmit}
+            onPress={onFormSubmit(handleSubmit)}
             disabled={loading}
           />
         </View>
@@ -249,5 +320,35 @@ const styles = StyleSheet.create({
   },
   errorInput: {
     borderColor: "#FF3B30",
+  },
+  errorText: {
+    color: "#FF3B30",
+    fontSize: 12,
+    marginTop: 4,
+  },
+  phoneInputContainer: {
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.1)",
+    borderRadius: 8,
+    backgroundColor: "rgba(255,255,255,0.8)",
+    height: 50,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  phoneTextContainer: {
+    paddingVertical: 0,
+    backgroundColor: "transparent",
+  },
+  phoneTextInput: {
+    fontSize: 16,
+    paddingVertical: 0,
+    color: "#000",
+  },
+  phoneCodeText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
