@@ -93,8 +93,6 @@ export default function RegisterScreen() {
             style={styles.input}
             value={arabicName}
             onChangeText={setArabicName}
-            placeholder={t("arabicName")}
-            placeholderTextColor="rgba(0,0,0,0.3)"
           />
         </View>
 
@@ -104,8 +102,6 @@ export default function RegisterScreen() {
             style={styles.input}
             value={englishName}
             onChangeText={setEnglishName}
-            placeholder={t("englishName")}
-            placeholderTextColor="rgba(0,0,0,0.3)"
           />
         </View>
 
@@ -116,8 +112,6 @@ export default function RegisterScreen() {
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
-            placeholder={t("phone")}
-            placeholderTextColor="rgba(0,0,0,0.3)"
           />
         </View>
 
@@ -190,6 +184,8 @@ const styles = StyleSheet.create({
   container: {
     gap: 16,
     padding: 16,
+    backgroundColor: "rgba(255,255,255,0.02)",
+    borderRadius: 12,
   },
   title: {
     paddingTop: 8,
@@ -205,11 +201,18 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.1)",
-    borderRadius: 10,
+    borderRadius: 8,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: "rgba(255,255,255,0.5)",
+    paddingVertical: 10,
+    minHeight: 40,
+    backgroundColor: "rgba(255,255,255,0.8)",
     fontSize: 16,
+    textAlignVertical: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   submitButton: {
     marginTop: 16,

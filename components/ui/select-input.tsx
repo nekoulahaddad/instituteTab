@@ -37,18 +37,18 @@ export default function SelectInput({
   return (
     <>
       <TouchableOpacity
-        style={[styles.button, { borderColor: tint }]}
+        style={styles.button}
         onPress={() => setVisible(true)}
       >
         <Text style={[styles.buttonText, { color }]}>
           {selectedOption?.label || ""}
         </Text>
-        <IconSymbol name="chevron.down" size={16} color={tint} />
+        <IconSymbol name="chevron.down" size={16} color={color} />
       </TouchableOpacity>
       <Modal
         visible={visible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setVisible(false)}
       >
         <TouchableWithoutFeedback onPress={() => setVisible(false)}>
@@ -83,11 +83,20 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     height: 40,
+    // match text input appearance
+    borderColor: "rgba(0,0,0,0.1)",
+    backgroundColor: "rgba(255,255,255,0.8)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   buttonText: {
     fontSize: 16,
+    lineHeight: 40,
   },
   modalOverlay: {
     flex: 1,
@@ -96,17 +105,25 @@ const styles = StyleSheet.create({
   modalContent: {
     position: "absolute",
     top: "30%",
-    left: "10%",
-    right: "10%",
-    maxHeight: "40%",
-    borderRadius: 8,
+    left: "5%",
+    right: "5%",
+    maxHeight: "50%",
+    borderRadius: 12,
     paddingVertical: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   option: {
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   optionText: {
     fontSize: 16,
+    fontWeight: "500",
   },
 });
