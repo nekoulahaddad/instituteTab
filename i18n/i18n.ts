@@ -1,7 +1,6 @@
 import ar from "@/locales/ar.json";
 import en from "@/locales/en.json";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Updates from "expo-updates";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { I18nManager } from "react-native";
@@ -47,13 +46,8 @@ export const changeLanguage = async (language: "en" | "ar") => {
     // Handle RTL for Arabic
     const isRTL = language === "ar";
 
-    if (I18nManager.isRTL !== isRTL) {
-      I18nManager.allowRTL(isRTL);
-      I18nManager.forceRTL(isRTL);
-
-      // Restart the app to apply RTL changes
-      await Updates.reloadAsync();
-    }
+    I18nManager.allowRTL(isRTL);
+    I18nManager.forceRTL(isRTL);
   } catch (error) {
     console.error("Error changing language:", error);
   }

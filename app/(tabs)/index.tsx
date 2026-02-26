@@ -2,13 +2,16 @@ import { Image } from "expo-image";
 import { Platform, StyleSheet } from "react-native";
 
 import { HelloWave } from "@/components/hello-wave";
+import LanguageSwitcher from "@/components/language-switcher";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import ModernButton from "@/components/ui/modern-button";
+import { useLanguage } from "@/context/LanguageContext";
 import { Link } from "expo-router";
 
 export default function HomeScreen() {
+  const { isRTL } = useLanguage();
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
@@ -19,11 +22,17 @@ export default function HomeScreen() {
         />
       }
     >
-      <ThemedView style={styles.titleContainer}>
+      <ThemedView
+        style={[
+          styles.titleContainer,
+          { flexDirection: isRTL ? "row-reverse" : "row" },
+        ]}
+      >
         <ThemedText type="title"></ThemedText>
         <HelloWave />
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
+        <LanguageSwitcher />
         <ModernButton
           title="تسجيل حضور"
           onPress={() => console.log("Pressed")}
