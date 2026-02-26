@@ -3,6 +3,7 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+import * as Font from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
@@ -24,6 +25,11 @@ export default function RootLayout() {
 
   useEffect(() => {
     const loadLanguage = async () => {
+      // Load custom fonts
+      await Font.loadAsync({
+        Cairo: require("@/assets/fonts/Cairo-Regular.ttf"),
+        "Cairo-Bold": require("@/assets/fonts/Cairo-Bold.ttf"),
+      });
       await initializeLanguage();
       setIsLoading(false);
     };

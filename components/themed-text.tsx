@@ -17,12 +17,21 @@ export function ThemedText({
   ...rest
 }: ThemedTextProps) {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, "text");
-  const { textAlign } = useLanguage();
+  const { textAlign, language } = useLanguage();
+
+  // Use Cairo font for Arabic, default system font for English
+  const fontFamily = language === "ar" ? "Cairo" : undefined;
+
+  // For bold text types, use Cairo-Bold variant
+  const fontWeight =
+    type === "title" || type === "defaultSemiBold" || type === "subtitle"
+      ? "700"
+      : "400";
 
   return (
     <Text
       style={[
-        { color, textAlign },
+        { color, textAlign, fontFamily, fontWeight: fontWeight as any },
         type === "default" ? styles.default : undefined,
         type === "title" ? styles.title : undefined,
         type === "defaultSemiBold" ? styles.defaultSemiBold : undefined,

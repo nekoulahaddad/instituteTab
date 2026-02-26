@@ -1,3 +1,4 @@
+import { useLanguage } from "@/context/LanguageContext";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
@@ -33,6 +34,7 @@ const ModernButton = ({
   style,
   textStyle,
 }: ModernButtonProps) => {
+  const { language, textAlign } = useLanguage();
   // Animation value
   const scaleValue = new Animated.Value(1);
   const opacityValue = new Animated.Value(1);
@@ -108,6 +110,10 @@ const ModernButton = ({
   const getTextStyles = () => {
     const baseStyles: any = [styles.text];
 
+    // Apply Cairo font for Arabic
+    const fontFamily = language === "ar" ? "Cairo" : undefined;
+    const fontWeight = language === "ar" ? "700" : "600";
+
     // Size styles
     switch (size) {
       case "small":
@@ -135,7 +141,10 @@ const ModernButton = ({
         baseStyles.push(styles.textWhite);
     }
 
-    return baseStyles;
+    return [
+      { fontFamily, fontWeight: fontWeight as any, textAlign },
+      ...baseStyles,
+    ];
   };
 
   // Glow effect component
