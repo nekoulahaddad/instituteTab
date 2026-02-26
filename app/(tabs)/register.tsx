@@ -3,6 +3,7 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import ModernButton from "@/components/ui/modern-button";
+import SelectInput from "@/components/ui/select-input";
 import {
     Branches,
     Languages,
@@ -122,62 +123,47 @@ export default function RegisterScreen() {
 
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("role")}</ThemedText>
-          <View style={styles.optionRow}>
-            {UserRoles.map((r) => (
-              <ModernButton
-                key={r}
-                title={t(`roles.${r}`)}
-                onPress={() => setRole(r)}
-                type={role === r ? "black" : "outline-black"}
-                size="small"
-              />
-            ))}
-          </View>
+          <SelectInput
+            options={UserRoles.map((r) => ({
+              label: t(`roles.${r}`),
+              value: r,
+            }))}
+            selectedValue={role}
+            onValueChange={(v) => setRole(v)}
+          />
         </View>
 
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("language")}</ThemedText>
-          <View style={styles.optionRow}>
-            {Languages.map((l) => (
-              <ModernButton
-                key={l}
-                title={l.toUpperCase()}
-                onPress={() => setLanguage(l)}
-                type={language === l ? "black" : "outline-black"}
-                size="small"
-              />
-            ))}
-          </View>
+          <SelectInput
+            options={Languages.map((l) => ({
+              label: l.toUpperCase(),
+              value: l,
+            }))}
+            selectedValue={language}
+            onValueChange={(v) => setLanguage(v)}
+          />
         </View>
 
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("level")}</ThemedText>
-          <View style={styles.optionRow}>
-            {Levels.map((lv) => (
-              <ModernButton
-                key={lv}
-                title={t(`levels.${lv}`)}
-                onPress={() => setLevel(lv)}
-                type={level === lv ? "black" : "outline-black"}
-                size="small"
-              />
-            ))}
-          </View>
+          <SelectInput
+            options={Levels.map((lv) => ({
+              label: t(`levels.${lv}`),
+              value: lv,
+            }))}
+            selectedValue={level}
+            onValueChange={(v) => setLevel(v)}
+          />
         </View>
 
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("branch")}</ThemedText>
-          <View style={styles.optionRow}>
-            {Branches.map((b) => (
-              <ModernButton
-                key={b.id}
-                title={b.name}
-                onPress={() => setBranchId(b.id)}
-                type={branchId === b.id ? "black" : "outline-black"}
-                size="small"
-              />
-            ))}
-          </View>
+          <SelectInput
+            options={Branches.map((b) => ({ label: b.name, value: b.id }))}
+            selectedValue={branchId}
+            onValueChange={(v) => setBranchId(v)}
+          />
         </View>
 
         <View style={styles.submitButton}>
@@ -224,12 +210,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: "rgba(255,255,255,0.5)",
     fontSize: 16,
-  },
-  optionRow: {
-    flexDirection: "row",
-    gap: 8,
-    flexWrap: "wrap",
-    marginVertical: 4,
   },
   submitButton: {
     marginTop: 16,
