@@ -1,4 +1,5 @@
 import { registerUser } from "@/app/services/api";
+import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import ModernButton from "@/components/ui/modern-button";
@@ -9,10 +10,11 @@ import {
     UserRoles,
     UserStatuses,
 } from "@/constants/enums";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { Alert, StyleSheet, TextInput, View } from "react-native";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -69,12 +71,21 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent}>
+    <ParallaxScrollView
+      headerBackgroundColor={{ light: "#E0F7FA", dark: "#004D40" }}
+      headerImage={
+        <Image
+          source={{
+            uri: "https://via.placeholder.com/600x250.png?text=Register+Header",
+          }}
+          style={styles.headerImage}
+        />
+      }
+    >
       <ThemedView style={styles.container}>
         <ThemedText type="title" style={styles.title}>
           {t("register")}
         </ThemedText>
-
         <View style={styles.formGroup}>
           <ThemedText style={styles.label}>{t("arabicName")} *</ThemedText>
           <TextInput
@@ -177,11 +188,16 @@ export default function RegisterScreen() {
           />
         </View>
       </ThemedView>
-    </ScrollView>
+    </ParallaxScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  headerImage: {
+    width: "100%",
+    height: 250,
+    resizeMode: "cover",
+  },
   scrollContent: {
     flexGrow: 1,
   },
@@ -190,6 +206,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   title: {
+    paddingTop: 8,
     marginBottom: 8,
   },
   formGroup: {
