@@ -3,6 +3,7 @@ import {
   getStoredUser,
   saveStoredUser,
 } from "@/app/services/api";
+import Header from "@/components/Header";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import QRModal from "@/components/qr-modal";
 import { ThemedText } from "@/components/themed-text";
@@ -97,6 +98,7 @@ export default function ProfileScreen() {
           />
         }
       >
+        <Header title="profileHeaderTitle" subTitle="profileHeaderSubtitle" />
         <ThemedView style={styles.container}>
           <ThemedText style={styles.statusMessage}>
             {statusLoading ? t("loading") : getStatusMessage()}
@@ -118,6 +120,7 @@ export default function ProfileScreen() {
         />
       }
     >
+      <Header title="profileHeaderTitle" subTitle="profileHeaderSubtitle" />
       <ThemedView style={styles.container}>
         {user.profileImageUrl ? (
           <Image source={{ uri: user.profileImageUrl }} style={styles.avatar} />

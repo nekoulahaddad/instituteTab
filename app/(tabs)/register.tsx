@@ -4,6 +4,7 @@ import {
   saveStoredUser,
   updateRegistration,
 } from "@/app/services/api";
+import Header from "@/components/Header";
 import If from "@/components/If";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import SignIn from "@/components/sign-in";
@@ -187,6 +188,7 @@ export default function RegisterScreen() {
         />
       }
     >
+      <Header title="registerHeaderTitle" subTitle="registerHeaderSubtitle" />
       <If condition={!signInMode}>
         <ThemedView style={styles.container}>
           <ThemedText type="title" style={styles.title}>

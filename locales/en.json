@@ -72,5 +72,13 @@
   "sendCode": "Send code",
   "verifyCode": "Verify code",
   "signedIn": "Signed in successfully",
-  "or": "OR"
+  "or": "OR",
+  "instituteNews": "Institute News",
+  "instituteNewsSubtitle": "Stay informed with the latest institute announcements, events, and updates.",
+  "latestUpdates": "Latest updates",
+  "moreNews": "More news",
+  "newsUnavailable": "No news available",
+  "newsUnavailableHint": "News will appear here once the institute publishes new updates.",
+  "newsLoadFailed": "Unable to load news. Pull to refresh or try again.",
+  "retry": "Retry"
 }

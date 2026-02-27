@@ -8,6 +8,104 @@ const api = axios.create({
   timeout: 10000,
 });
 
+export type LocalizedText = {
+  ar: string;
+  en: string;
+};
+
+export type InstituteNews = {
+  id: string;
+  title: LocalizedText;
+  summary: LocalizedText;
+  category: LocalizedText;
+  imageUrl?: string;
+  publishedAt: string;
+};
+
+const mockLatestNews: InstituteNews[] = [
+  {
+    id: "news-1",
+    title: {
+      en: "Spring Semester Registration Is Open",
+      ar: "فتح التسجيل للفصل الدراسي الربيعي",
+    },
+    summary: {
+      en: "Students can now register online until March 10. Late requests will require academic approval.",
+      ar: "يمكن للطلاب التسجيل إلكترونيا حتى 10 مارس. الطلبات المتأخرة تحتاج موافقة أكاديمية.",
+    },
+    category: {
+      en: "Announcements",
+      ar: "إعلانات",
+    },
+    imageUrl:
+      "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1280&q=80",
+    publishedAt: "2026-02-24T09:00:00.000Z",
+  },
+  {
+    id: "news-2",
+    title: {
+      en: "AI Lab Workshop for New Students",
+      ar: "ورشة معمل الذكاء الاصطناعي للطلاب الجدد",
+    },
+    summary: {
+      en: "A practical workshop will be held in Hall B this Tuesday at 12:00 PM.",
+      ar: "ستقام ورشة تطبيقية في القاعة B يوم الثلاثاء الساعة 12:00 ظهرا.",
+    },
+    category: {
+      en: "Events",
+      ar: "فعاليات",
+    },
+    imageUrl:
+      "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1280&q=80",
+    publishedAt: "2026-02-22T08:30:00.000Z",
+  },
+  {
+    id: "news-3",
+    title: {
+      en: "Library Extends Evening Hours",
+      ar: "تمديد ساعات عمل المكتبة المسائية",
+    },
+    summary: {
+      en: "The central library will stay open until 9:00 PM during exam preparation weeks.",
+      ar: "ستبقى المكتبة المركزية مفتوحة حتى 9:00 مساء خلال أسابيع التحضير للامتحانات.",
+    },
+    category: {
+      en: "Campus",
+      ar: "الحرم",
+    },
+    imageUrl:
+      "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=1280&q=80",
+    publishedAt: "2026-02-20T15:45:00.000Z",
+  },
+];
+
+export async function getLatestNews(): Promise<InstituteNews[]> {
+  try {
+    const response = await api.get("/news/latest");
+    const raw = response.data;
+
+    if (Array.isArray(raw)) {
+      return raw;
+    }
+
+    if (Array.isArray(raw?.data)) {
+      return raw.data;
+    }
+
+    if (Array.isArray(raw?.items)) {
+      return raw.items;
+    }
+
+    return [];
+  } catch (error: any) {
+    console.warn(
+      "Latest news endpoint is not available yet, falling back to mock news.",
+      error?.message,
+    );
+    return mockLatestNews;
+  }
+}
+
 export async function registerUser(payload: any) {
   try {
     console.log("Registering user with payload:", payload, BASE_URL);
