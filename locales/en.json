@@ -65,5 +65,12 @@
   "explore": "Explore",
   "step": "Step",
   "tryIt": "Try it",
-  "getStart": "Get a fresh start"
+  "getStart": "Get a fresh start",
+  "phoneRequired": "Phone number is required",
+  "codeRequired": "Verification code is required",
+  "otpSent": "A verification code has been sent",
+  "signIn": "Sign in",
+  "sendCode": "Send code",
+  "verifyCode": "Verify code",
+  "signedIn": "Signed in successfully"
 }

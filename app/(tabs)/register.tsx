@@ -2,7 +2,9 @@ import {
   findUserByPhone,
   registerUser,
   saveStoredUser,
+  sendVerificationCode,
   updateRegistration,
+  verifyCode,
 } from "@/app/services/api";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
@@ -53,8 +55,21 @@ export default function RegisterScreen() {
   const phoneInputRef = useRef<PhoneInput>(null);
   const [selectedCountryCode, setSelectedCountryCode] = useState("SY");
   const [loading, setLoading] = useState(false);
+  const [hasStoredUser, setHasStoredUser] = useState(false);
+
+  // sign in state
+  const [signInMode, setSignInMode] = useState(false);
+  const [signPhone, setSignPhone] = useState("");
+  const [signCode, setSignCode] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [signLoading, setSignLoading] = useState(false);
 
   const loadUserData = useCallback(async () => {
+    // determine if user exists in storage
+    try {
+      const storedUser = await AsyncStorage.getItem("user");
+      setHasStoredUser(!!storedUser);
+    } catch {}
     try {
       const storedUser = await AsyncStorage.getItem("user");
       if (!storedUser) {
@@ -129,6 +144,9 @@ export default function RegisterScreen() {
   );
 
   const handleSubmit = async (values: any) => {
+    // clear sign-in when registering/updating
+    setSignInMode(false);
+    setOtpSent(false);
     try {
       setLoading(true);
 
@@ -154,10 +172,50 @@ export default function RegisterScreen() {
       }
 
       router.replace("/(tabs)/profile");
+      setHasStoredUser(true);
     } catch (err: any) {
       Alert.alert(t("error"), err.message || t("registrationError"));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const sendOtp = async () => {
+    if (!signPhone) {
+      Alert.alert(t("error"), t("phoneRequired"));
+      return;
+    }
+    setSignLoading(true);
+    try {
+      await sendVerificationCode(signPhone);
+      setOtpSent(true);
+      Alert.alert(t("success"), t("otpSent"));
+    } catch (e: any) {
+      Alert.alert(t("error"), e.message);
+    } finally {
+      setSignLoading(false);
+    }
+  };
+
+  const verifyOtp = async () => {
+    if (!signCode) {
+      Alert.alert(t("error"), t("codeRequired"));
+      return;
+    }
+    setSignLoading(true);
+    try {
+      const resp = await verifyCode(signPhone, signCode);
+      if (resp.user) {
+        await saveStoredUser(resp.user);
+        setHasStoredUser(true);
+        setSignInMode(false);
+        Alert.alert(t("success"), t("signedIn"));
+        router.replace("/(tabs)/profile");
+      }
+    } catch (e: any) {
+      Alert.alert(t("error"), e.message);
+    } finally {
+      setSignLoading(false);
     }
   };
 
@@ -374,6 +432,70 @@ export default function RegisterScreen() {
             disabled={loading}
           />
         </View>
+
+        {/* sign-in workflow for users without stored account */}
+        {!hasStoredUser && !signInMode && (
+          <View style={styles.submitButton}>
+            <ModernButton
+              title={t("signIn")}
+              onPress={() => {
+                setSignPhone("");
+                setSignCode("");
+                setOtpSent(false);
+                setSignInMode(true);
+              }}
+            />
+          </View>
+        )}
+
+        {signInMode && (
+          <View style={styles.container}>
+            <ThemedText type="title" style={styles.title}>
+              {t("signIn")}
+            </ThemedText>
+            <View style={styles.formGroup}>
+              <ThemedText style={styles.label}>{t("phone")} *</ThemedText>
+              <TextInput
+                style={styles.input}
+                value={signPhone}
+                onChangeText={(v) => {
+                  setSignCode("");
+                  setOtpSent(false);
+                  setSignPhone(v);
+                }}
+                keyboardType="phone-pad"
+                placeholder={t("phone")}
+              />
+            </View>
+            {otpSent && (
+              <View style={styles.formGroup}>
+                <ThemedText style={styles.label}>
+                  {t("codeRequired")} *
+                </ThemedText>
+                <TextInput
+                  style={styles.input}
+                  value={signCode}
+                  onChangeText={setSignCode}
+                  keyboardType="number-pad"
+                  placeholder={t("verifyCode")}
+                />
+              </View>
+            )}
+            <View style={styles.submitButton}>
+              <ModernButton
+                title={
+                  signLoading
+                    ? t("loading")
+                    : otpSent
+                      ? t("verifyCode")
+                      : t("sendCode")
+                }
+                onPress={otpSent ? verifyOtp : sendOtp}
+                disabled={signLoading}
+              />
+            </View>
+          </View>
+        )}
       </ThemedView>
     </ParallaxScrollView>
   );

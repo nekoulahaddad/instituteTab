@@ -41,6 +41,7 @@ export async function saveStoredUser(user: any) {
 
 export async function findUserByPhone(phone: string) {
   try {
+    await AsyncStorage.removeItem("user");
     const response = await api.get(`/users/find-by-phone/${phone}`);
     return response.data;
   } catch (error: any) {
@@ -69,6 +70,43 @@ export async function updateRegistration(id: string, payload: any) {
     console.error("Update registration error:", error);
     const message =
       error.response?.data?.message || error.message || "Update failed";
+    throw new Error(message);
+  }
+}
+
+// authentication/otp helpers
+// NOTE: backend endpoints need to be implemented accordingly. Two suggested routes:
+//   POST /auth/send-code   body { phone: string }
+//     -> generates a numeric code, sends via WhatsApp
+//   POST /auth/verify-code body { phone: string, code: string }
+//     -> checks code, returns user object if valid (existing or newly created)
+
+export async function sendVerificationCode(phone: string) {
+  try {
+    const response = await api.post(`/auth/send-code`, { phone });
+    return response.data; // maybe returns { success: true }
+  } catch (error: any) {
+    console.error("Send verification code error:", error);
+    const message =
+      error.response?.data?.message || error.message || "Failed to send code";
+    throw new Error(message);
+  }
+}
+
+export async function verifyCode(phone: string, code: string) {
+  try {
+    const response = await api.post(`/auth/verify-code`, { phone, code });
+    // expected to receive { user: {...} }
+    if (response.data.user) {
+      await AsyncStorage.setItem("user", JSON.stringify(response.data.user));
+    }
+    return response.data;
+  } catch (error: any) {
+    console.error("Verify code error:", error);
+    const message =
+      error.response?.data?.message ||
+      error.message ||
+      "Code verification failed";
     throw new Error(message);
   }
 }
