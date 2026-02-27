@@ -188,7 +188,14 @@ export default function RegisterScreen() {
         />
       }
     >
-      <Header title="registerHeaderTitle" subTitle="registerHeaderSubtitle" />
+      <Header
+        title="registerHeaderTitle"
+        subTitle="registerHeaderSubtitle"
+        backgroundColors={{
+          light: ["#E4F8ED", "#F3FFF7", "#FFFFFF"],
+          dark: ["#0E2F25", "#14382E", "#151718"],
+        }}
+      />
       <If condition={!signInMode}>
         <ThemedView style={styles.container}>
           <ThemedText type="title" style={styles.title}>

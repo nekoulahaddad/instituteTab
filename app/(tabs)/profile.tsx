@@ -98,7 +98,14 @@ export default function ProfileScreen() {
           />
         }
       >
-        <Header title="profileHeaderTitle" subTitle="profileHeaderSubtitle" />
+        <Header
+          title="profileHeaderTitle"
+          subTitle="profileHeaderSubtitle"
+          backgroundColors={{
+            light: ["#FFEED8", "#FFF7EE", "#FFFFFF"],
+            dark: ["#3B261C", "#2E211C", "#151718"],
+          }}
+        />
         <ThemedView style={styles.container}>
           <ThemedText style={styles.statusMessage}>
             {statusLoading ? t("loading") : getStatusMessage()}
@@ -120,7 +127,14 @@ export default function ProfileScreen() {
         />
       }
     >
-      <Header title="profileHeaderTitle" subTitle="profileHeaderSubtitle" />
+      <Header
+        title="profileHeaderTitle"
+        subTitle="profileHeaderSubtitle"
+        backgroundColors={{
+          light: ["#FFEED8", "#FFF7EE", "#FFFFFF"],
+          dark: ["#3B261C", "#2E211C", "#151718"],
+        }}
+      />
       <ThemedView style={styles.container}>
         {user.profileImageUrl ? (
           <Image source={{ uri: user.profileImageUrl }} style={styles.avatar} />

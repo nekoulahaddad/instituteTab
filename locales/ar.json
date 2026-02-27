@@ -80,6 +80,9 @@
   "newsUnavailable": "لا توجد أخبار حاليا",
   "newsUnavailableHint": "ستظهر الأخبار هنا عند نشر تحديثات جديدة من المعهد.",
   "newsLoadFailed": "تعذر تحميل الأخبار. يرجى التحديث أو المحاولة مرة أخرى.",
-  "retry": "إعادة المحاولة"
+  "retry": "إعادة المحاولة",
+  "profileHeaderTitle": "الملف الشخصي",
+  "profileHeaderSubtitle": "راجع بيانات تسجيلك وحالة حسابك.",
+  "registerHeaderTitle": "التسجيل",
+  "registerHeaderSubtitle": "أكمل طلب التسجيل بالمعلومات الصحيحة."
 }
-

@@ -80,5 +80,9 @@
   "newsUnavailable": "No news available",
   "newsUnavailableHint": "News will appear here once the institute publishes new updates.",
   "newsLoadFailed": "Unable to load news. Pull to refresh or try again.",
-  "retry": "Retry"
+  "retry": "Retry",
+  "profileHeaderTitle": "Your Profile",
+  "profileHeaderSubtitle": "Review your registration details and account status.",
+  "registerHeaderTitle": "Registration",
+  "registerHeaderSubtitle": "Complete your registration application with accurate information."
 }
