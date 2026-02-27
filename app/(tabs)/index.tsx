@@ -6,7 +6,7 @@ import {
   Pressable,
   RefreshControl,
   StyleSheet,
-  View
+  View,
 } from "react-native";
 
 import {
@@ -18,7 +18,6 @@ import Header from "@/components/Header/Header";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useLanguage } from "@/context/LanguageContext";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 function getLocalizedValue(
@@ -125,7 +124,6 @@ function SkeletonBlock() {
 }
 
 export default function HomeScreen() {
-  const colorScheme = useColorScheme();
   const { t } = useTranslation();
   const { language, isRTL } = useLanguage();
 
@@ -135,7 +133,6 @@ export default function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const backgroundColor = useThemeColor({}, "background");
-  const textColor = useThemeColor({}, "text");
   const mutedColor = useThemeColor(
     { light: "#5B6670", dark: "#A9B4BE" },
     "icon",

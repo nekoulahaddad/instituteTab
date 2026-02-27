@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
     paddingVertical: 10,
-    maxWidth: "100%",
+    minWidth: "100%",
   },
   phoneTextContainer: {
     paddingVertical: 0,
