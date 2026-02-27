@@ -10,7 +10,7 @@
   "loading": "Loading...",
   "error": "Error",
   "success": "Success",
-  "register": "Register",
+  "register": "Register Account",
   "registering": "Registering...",
   "profile": "Profile",
   "qrCode": "QR Code",
@@ -66,11 +66,11 @@
   "step": "Step",
   "tryIt": "Try it",
   "getStart": "Get a fresh start",
-  "phoneRequired": "Phone number is required",
   "codeRequired": "Verification code is required",
   "otpSent": "A verification code has been sent",
   "signIn": "Sign in",
   "sendCode": "Send code",
   "verifyCode": "Verify code",
-  "signedIn": "Signed in successfully"
+  "signedIn": "Signed in successfully",
+  "or": "OR"
 }

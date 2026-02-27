@@ -2,11 +2,11 @@ import {
   findUserByPhone,
   registerUser,
   saveStoredUser,
-  sendVerificationCode,
   updateRegistration,
-  verifyCode,
 } from "@/app/services/api";
+import If from "@/components/If";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
+import SignIn from "@/components/sign-in";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import ModernButton from "@/components/ui/modern-button";
@@ -59,10 +59,6 @@ export default function RegisterScreen() {
 
   // sign in state
   const [signInMode, setSignInMode] = useState(false);
-  const [signPhone, setSignPhone] = useState("");
-  const [signCode, setSignCode] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [signLoading, setSignLoading] = useState(false);
 
   const loadUserData = useCallback(async () => {
     // determine if user exists in storage
@@ -146,7 +142,6 @@ export default function RegisterScreen() {
   const handleSubmit = async (values: any) => {
     // clear sign-in when registering/updating
     setSignInMode(false);
-    setOtpSent(false);
     try {
       setLoading(true);
 
@@ -180,45 +175,6 @@ export default function RegisterScreen() {
     }
   };
 
-  const sendOtp = async () => {
-    if (!signPhone) {
-      Alert.alert(t("error"), t("phoneRequired"));
-      return;
-    }
-    setSignLoading(true);
-    try {
-      await sendVerificationCode(signPhone);
-      setOtpSent(true);
-      Alert.alert(t("success"), t("otpSent"));
-    } catch (e: any) {
-      Alert.alert(t("error"), e.message);
-    } finally {
-      setSignLoading(false);
-    }
-  };
-
-  const verifyOtp = async () => {
-    if (!signCode) {
-      Alert.alert(t("error"), t("codeRequired"));
-      return;
-    }
-    setSignLoading(true);
-    try {
-      const resp = await verifyCode(signPhone, signCode);
-      if (resp.user) {
-        await saveStoredUser(resp.user);
-        setHasStoredUser(true);
-        setSignInMode(false);
-        Alert.alert(t("success"), t("signedIn"));
-        router.replace("/(tabs)/profile");
-      }
-    } catch (e: any) {
-      Alert.alert(t("error"), e.message);
-    } finally {
-      setSignLoading(false);
-    }
-  };
-
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: "#E0F7FA", dark: "#004D40" }}
@@ -231,272 +187,238 @@ export default function RegisterScreen() {
         />
       }
     >
-      <ThemedView style={styles.container}>
-        <ThemedText type="title" style={styles.title}>
-          {isUpdate ? t("updateInformation") : t("register")}
-        </ThemedText>
-        <View style={styles.formGroup}>
-          <ThemedText style={styles.label}>{t("arabicName")} *</ThemedText>
-          <Controller
-            control={control}
-            name="arabicName"
-            rules={{
-              required: true,
-              pattern: {
-                value: /^[\u0600-\u06FF\s]+$/,
-                message: t("arabicNameArabicOnly"),
-              },
-            }}
-            render={({ field: { value, onChange } }) => (
-              <TextInput
-                style={[styles.input, errors.arabicName && styles.errorInput]}
-                value={value}
-                onChangeText={onChange}
-                keyboardType="default"
-              />
-            )}
-          />
-          {errors.arabicName && (
-            <ThemedText style={styles.errorText}>
-              {errors.arabicName.type === "required"
-                ? t("arabicNameRequired")
-                : t("arabicNameArabicOnly")}
-            </ThemedText>
-          )}
-        </View>
-
-        <View style={styles.formGroup}>
-          <ThemedText style={styles.label}>{t("englishName")} *</ThemedText>
-          <Controller
-            control={control}
-            name="englishName"
-            rules={{
-              required: true,
-              pattern: {
-                value: /^[A-Za-z\s]+$/,
-                message: t("englishNameEnglishOnly"),
-              },
-            }}
-            render={({ field: { value, onChange } }) => (
-              <TextInput
-                style={[styles.input, errors.englishName && styles.errorInput]}
-                value={value}
-                onChangeText={onChange}
-                keyboardType="ascii-capable"
-              />
-            )}
-          />
-          {errors.englishName && (
-            <ThemedText style={styles.errorText}>
-              {errors.englishName.type === "required"
-                ? t("englishNameRequired")
-                : t("englishNameEnglishOnly")}
-            </ThemedText>
-          )}
-        </View>
-
-        <View style={styles.formGroup}>
-          <ThemedText style={styles.label}>{t("phone")}</ThemedText>
-          <Controller
-            control={control}
-            name="phone"
-            rules={{
-              required: true,
-              validate: (value) => {
-                if (!value) return true;
-                const isValid = phoneInputRef.current?.isValidNumber(value);
-                return isValid || t("phoneInvalid");
-              },
-            }}
-            render={({ field: { value, onChange } }) => (
-              <PhoneInput
-                ref={phoneInputRef}
-                defaultValue={value || ""}
-                defaultCode={selectedCountryCode as any}
-                layout="first"
-                onChangeText={(text) => onChange(text)}
-                onChangeFormattedText={(text) => onChange(text)}
-                onChangeCountry={(country) =>
-                  setSelectedCountryCode(country.cca2)
-                }
-                containerStyle={[
-                  styles.phoneInputContainer,
-                  errors.phone && { borderColor: "#FF3B30" },
-                ]}
-                textContainerStyle={styles.phoneTextContainer}
-                textInputStyle={styles.phoneTextInput}
-                codeTextStyle={styles.phoneCodeText}
-                flagButtonStyle={styles.flagButtonStyle}
-                countryPickerButtonStyle={styles.countryPickerButtonStyle}
-              />
-            )}
-          />
-          {errors.phone && (
-            <ThemedText style={styles.errorText}>
-              {errors.phone.type === "required"
-                ? t("phoneRequired")
-                : errors.phone.message || t("phoneInvalid")}
-            </ThemedText>
-          )}
-        </View>
-
-        <View style={styles.formGroup}>
-          <ThemedText style={styles.label}>{t("role")}</ThemedText>
-          <Controller
-            control={control}
-            name="role"
-            rules={{ required: true }}
-            render={({ field: { value, onChange } }) => (
-              <SelectInput
-                options={UserRoles.map((r) => ({
-                  label: t(`roles.${r}`),
-                  value: r,
-                }))}
-                selectedValue={value}
-                onValueChange={onChange}
-                error={!!errors.role}
-              />
-            )}
-          />
-        </View>
-
-        <View style={styles.formGroup}>
-          <ThemedText style={styles.label}>{t("language")}</ThemedText>
-          <Controller
-            control={control}
-            name="language"
-            rules={{ required: true }}
-            render={({ field: { value, onChange } }) => (
-              <SelectInput
-                options={Languages.map((l) => ({
-                  label: l.toUpperCase(),
-                  value: l,
-                }))}
-                selectedValue={value}
-                onValueChange={onChange}
-                error={!!errors.language}
-              />
-            )}
-          />
-        </View>
-
-        <View style={styles.formGroup}>
-          <ThemedText style={styles.label}>{t("level")}</ThemedText>
-          <Controller
-            control={control}
-            name="level"
-            rules={{ required: true }}
-            render={({ field: { value, onChange } }) => (
-              <SelectInput
-                options={Levels.map((lv) => ({
-                  label: t(`levels.${lv}`),
-                  value: lv,
-                }))}
-                selectedValue={value}
-                onValueChange={onChange}
-                error={!!errors.level}
-              />
-            )}
-          />
-        </View>
-
-        <View style={styles.formGroup}>
-          <ThemedText style={styles.label}>{t("branch")}</ThemedText>
-          <Controller
-            control={control}
-            name="branchId"
-            rules={{ required: true }}
-            render={({ field: { value, onChange } }) => (
-              <SelectInput
-                options={Branches.map((b) => ({ label: b.name, value: b.id }))}
-                selectedValue={value}
-                onValueChange={onChange}
-                error={!!errors.branchId}
-              />
-            )}
-          />
-        </View>
-
-        <View style={styles.submitButton}>
-          <ModernButton
-            title={
-              loading
-                ? isUpdate
-                  ? t("updating")
-                  : t("registering")
-                : isUpdate
-                  ? t("updateInformation")
-                  : t("register")
-            }
-            onPress={onFormSubmit(handleSubmit)}
-            disabled={loading}
-          />
-        </View>
-
-        {/* sign-in workflow for users without stored account */}
-        {!hasStoredUser && !signInMode && (
-          <View style={styles.submitButton}>
-            <ModernButton
-              title={t("signIn")}
-              onPress={() => {
-                setSignPhone("");
-                setSignCode("");
-                setOtpSent(false);
-                setSignInMode(true);
+      <If condition={!signInMode}>
+        <ThemedView style={styles.container}>
+          <ThemedText type="title" style={styles.title}>
+            {isUpdate ? t("updateInformation") : t("register")}
+          </ThemedText>
+          <View style={styles.formGroup}>
+            <ThemedText style={styles.label}>{t("arabicName")} *</ThemedText>
+            <Controller
+              control={control}
+              name="arabicName"
+              rules={{
+                required: true,
+                pattern: {
+                  value: /^[\u0600-\u06FF\s]+$/,
+                  message: t("arabicNameArabicOnly"),
+                },
               }}
+              render={({ field: { value, onChange } }) => (
+                <TextInput
+                  style={[styles.input, errors.arabicName && styles.errorInput]}
+                  value={value}
+                  onChangeText={onChange}
+                  keyboardType="default"
+                />
+              )}
+            />
+            {errors.arabicName && (
+              <ThemedText style={styles.errorText}>
+                {errors.arabicName.type === "required"
+                  ? t("arabicNameRequired")
+                  : t("arabicNameArabicOnly")}
+              </ThemedText>
+            )}
+          </View>
+
+          <View style={styles.formGroup}>
+            <ThemedText style={styles.label}>{t("englishName")} *</ThemedText>
+            <Controller
+              control={control}
+              name="englishName"
+              rules={{
+                required: true,
+                pattern: {
+                  value: /^[A-Za-z\s]+$/,
+                  message: t("englishNameEnglishOnly"),
+                },
+              }}
+              render={({ field: { value, onChange } }) => (
+                <TextInput
+                  style={[
+                    styles.input,
+                    errors.englishName && styles.errorInput,
+                  ]}
+                  value={value}
+                  onChangeText={onChange}
+                  keyboardType="ascii-capable"
+                />
+              )}
+            />
+            {errors.englishName && (
+              <ThemedText style={styles.errorText}>
+                {errors.englishName.type === "required"
+                  ? t("englishNameRequired")
+                  : t("englishNameEnglishOnly")}
+              </ThemedText>
+            )}
+          </View>
+
+          <View style={styles.formGroup}>
+            <ThemedText style={styles.label}>{t("phone")}</ThemedText>
+            <Controller
+              control={control}
+              name="phone"
+              rules={{
+                required: true,
+                validate: (value) => {
+                  if (!value) return true;
+                  const isValid = phoneInputRef.current?.isValidNumber(value);
+                  return isValid || t("phoneInvalid");
+                },
+              }}
+              render={({ field: { value, onChange } }) => (
+                <PhoneInput
+                  ref={phoneInputRef}
+                  defaultValue={value || ""}
+                  defaultCode={selectedCountryCode as any}
+                  layout="first"
+                  onChangeText={(text) => onChange(text)}
+                  onChangeFormattedText={(text) => onChange(text)}
+                  onChangeCountry={(country) =>
+                    setSelectedCountryCode(country.cca2)
+                  }
+                  containerStyle={[
+                    styles.phoneInputContainer,
+                    errors.phone && { borderColor: "#FF3B30" },
+                  ]}
+                  textContainerStyle={styles.phoneTextContainer}
+                  textInputStyle={styles.phoneTextInput}
+                  codeTextStyle={styles.phoneCodeText}
+                  flagButtonStyle={styles.flagButtonStyle}
+                  countryPickerButtonStyle={styles.countryPickerButtonStyle}
+                  placeholder={t("phone")}
+                />
+              )}
+            />
+            {errors.phone && (
+              <ThemedText style={styles.errorText}>
+                {errors.phone.type === "required"
+                  ? t("phoneRequired")
+                  : errors.phone.message || t("phoneInvalid")}
+              </ThemedText>
+            )}
+          </View>
+
+          <View style={styles.formGroup}>
+            <ThemedText style={styles.label}>{t("role")}</ThemedText>
+            <Controller
+              control={control}
+              name="role"
+              rules={{ required: true }}
+              render={({ field: { value, onChange } }) => (
+                <SelectInput
+                  options={UserRoles.map((r) => ({
+                    label: t(`roles.${r}`),
+                    value: r,
+                  }))}
+                  selectedValue={value}
+                  onValueChange={onChange}
+                  error={!!errors.role}
+                />
+              )}
             />
           </View>
-        )}
 
-        {signInMode && (
-          <View style={styles.container}>
-            <ThemedText type="title" style={styles.title}>
-              {t("signIn")}
-            </ThemedText>
-            <View style={styles.formGroup}>
-              <ThemedText style={styles.label}>{t("phone")} *</ThemedText>
-              <TextInput
-                style={styles.input}
-                value={signPhone}
-                onChangeText={(v) => {
-                  setSignCode("");
-                  setOtpSent(false);
-                  setSignPhone(v);
-                }}
-                keyboardType="phone-pad"
-                placeholder={t("phone")}
-              />
-            </View>
-            {otpSent && (
-              <View style={styles.formGroup}>
-                <ThemedText style={styles.label}>
-                  {t("codeRequired")} *
-                </ThemedText>
-                <TextInput
-                  style={styles.input}
-                  value={signCode}
-                  onChangeText={setSignCode}
-                  keyboardType="number-pad"
-                  placeholder={t("verifyCode")}
+          <View style={styles.formGroup}>
+            <ThemedText style={styles.label}>{t("language")}</ThemedText>
+            <Controller
+              control={control}
+              name="language"
+              rules={{ required: true }}
+              render={({ field: { value, onChange } }) => (
+                <SelectInput
+                  options={Languages.map((l) => ({
+                    label: l.toUpperCase(),
+                    value: l,
+                  }))}
+                  selectedValue={value}
+                  onValueChange={onChange}
+                  error={!!errors.language}
                 />
-              </View>
-            )}
-            <View style={styles.submitButton}>
+              )}
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <ThemedText style={styles.label}>{t("level")}</ThemedText>
+            <Controller
+              control={control}
+              name="level"
+              rules={{ required: true }}
+              render={({ field: { value, onChange } }) => (
+                <SelectInput
+                  options={Levels.map((lv) => ({
+                    label: t(`levels.${lv}`),
+                    value: lv,
+                  }))}
+                  selectedValue={value}
+                  onValueChange={onChange}
+                  error={!!errors.level}
+                />
+              )}
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <ThemedText style={styles.label}>{t("branch")}</ThemedText>
+            <Controller
+              control={control}
+              name="branchId"
+              rules={{ required: true }}
+              render={({ field: { value, onChange } }) => (
+                <SelectInput
+                  options={Branches.map((b) => ({
+                    label: b.name,
+                    value: b.id,
+                  }))}
+                  selectedValue={value}
+                  onValueChange={onChange}
+                  error={!!errors.branchId}
+                />
+              )}
+            />
+          </View>
+
+          <View style={styles.submitButton}>
+            <ModernButton
+              title={
+                loading
+                  ? isUpdate
+                    ? t("updating")
+                    : t("registering")
+                  : isUpdate
+                    ? t("updateInformation")
+                    : t("register")
+              }
+              onPress={onFormSubmit(handleSubmit)}
+              disabled={loading}
+            />
+          </View>
+
+          {/* sign-in workflow for users without stored account */}
+          {!hasStoredUser && !signInMode && (
+            <View>
+              <ThemedText type="title" style={styles.orText}>
+                {t("or")}
+              </ThemedText>
               <ModernButton
-                title={
-                  signLoading
-                    ? t("loading")
-                    : otpSent
-                      ? t("verifyCode")
-                      : t("sendCode")
-                }
-                onPress={otpSent ? verifyOtp : sendOtp}
-                disabled={signLoading}
+                title={t("signIn")}
+                onPress={() => {
+                  setSignInMode(true);
+                }}
               />
             </View>
-          </View>
-        )}
-      </ThemedView>
+          )}
+        </ThemedView>
+      </If>
+      <If condition={signInMode}>
+        <SignIn
+          setHasStoredUser={setHasStoredUser}
+          setSignInMode={setSignInMode}
+        />
+      </If>
     </ParallaxScrollView>
   );
 }
@@ -527,6 +449,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
+  submitButton: {
+    marginTop: 16,
+  },
   input: {
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.1)",
@@ -542,10 +467,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 1,
-  },
-  submitButton: {
-    marginTop: 16,
-    marginBottom: 16,
   },
   errorInput: {
     borderColor: "#FF3B30",
@@ -599,5 +520,11 @@ const styles = StyleSheet.create({
     width: "auto",
     justifyContent: "center",
     alignItems: "center",
+  },
+  orText: {
+    transform: [{ translateY: -4 }],
+    textAlign: "center",
+    paddingVertical: 8,
+    fontSize: 24,
   },
 });

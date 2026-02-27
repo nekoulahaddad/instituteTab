@@ -97,16 +97,14 @@ export async function verifyCode(phone: string, code: string) {
   try {
     const response = await api.post(`/auth/verify-code`, { phone, code });
     // expected to receive { user: {...} }
-    if (response.data.user) {
+    if (response?.data?.user) {
       await AsyncStorage.setItem("user", JSON.stringify(response.data.user));
     }
     return response.data;
   } catch (error: any) {
     console.error("Verify code error:", error);
     const message =
-      error.response?.data?.message ||
-      error.message ||
-      "Code verification failed";
+      error.response?.data?.message || error.message || "Failed to verify code";
     throw new Error(message);
   }
 }
