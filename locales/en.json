@@ -26,6 +26,7 @@
   "phone": "Phone",
   "role": "Role",
   "language": "Language",
+  "languages": "Languages",
   "level": "Level",
   "branch": "Branch",
   "status": "Status",
@@ -51,7 +52,8 @@
     "student": "Student",
     "teacher": "Teacher",
     "employee": "Employee",
-    "admin": "Admin"
+    "admin": "Admin",
+    "super_admin": "Super Admin"
   },
   "levels": {
     "beginner": "Beginner",
@@ -84,5 +86,13 @@
   "profileHeaderTitle": "Your Profile",
   "profileHeaderSubtitle": "Review your registration details and account status.",
   "registerHeaderTitle": "Registration",
-  "registerHeaderSubtitle": "Complete your registration application with accurate information."
+  "registerHeaderSubtitle": "Complete your registration application with accurate information.",
+  "addLanguage": "Add language",
+  "languageEntry": "Language {{index}}",
+  "languagesRequired": "Please add at least one language with level.",
+  "languageOptionEnglish": "English",
+  "languageOptionArabic": "Arabic",
+  "languageOptionFrench": "French",
+  "languageOptionTurkish": "Turkish",
+  "noLanguagesAdded": "No languages added yet."
 }

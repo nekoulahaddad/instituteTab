@@ -51,7 +51,8 @@
     "student": "طالب",
     "teacher": "معلم",
     "admin": "مسؤول",
-    "employee": "موظف"
+    "employee": "موظف",
+    "super_admin": "مسؤول عام"
   },
   "levels": {
     "beginner": "مبتدئ",
@@ -84,5 +85,14 @@
   "profileHeaderTitle": "الملف الشخصي",
   "profileHeaderSubtitle": "راجع بيانات تسجيلك وحالة حسابك.",
   "registerHeaderTitle": "التسجيل",
-  "registerHeaderSubtitle": "أكمل طلب التسجيل بالمعلومات الصحيحة."
+  "registerHeaderSubtitle": "أكمل طلب التسجيل بالمعلومات الصحيحة.",
+  "languages": "اللغات",
+  "addLanguage": "إضافة لغة",
+  "languageEntry": "اللغة {{index}}",
+  "languagesRequired": "يرجى إضافة لغة واحدة على الأقل مع المستوى.",
+  "languageOptionEnglish": "الإنجليزية",
+  "languageOptionArabic": "العربية",
+  "languageOptionFrench": "الفرنسية",
+  "languageOptionTurkish": "التركية",
+  "noLanguagesAdded": "لم تتم إضافة أي لغات بعد."
 }

@@ -9,11 +9,17 @@ import QRModal from "@/components/qr-modal";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import ModernButton from "@/components/ui/modern-button";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { Image as ExpoImage } from "expo-image";
 import { useFocusEffect } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Image, StyleSheet, View } from "react-native";
+
+type UserLanguage = {
+  language: string;
+  level: string;
+};
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -22,35 +28,39 @@ export default function ProfileScreen() {
   const [statusLoading, setStatusLoading] = useState(true);
   const [userStatus, setUserStatus] = useState<string | null>(null);
 
+  const mutedColor = useThemeColor(
+    { light: "#5B6670", dark: "#A9B4BE" },
+    "icon",
+  );
+  const cardBackground = useThemeColor(
+    { light: "#FFFFFF", dark: "#1C1F22" },
+    "background",
+  );
+
   const checkUserStatus = useCallback(async () => {
     try {
       setStatusLoading(true);
       const storedUser = await getStoredUser();
 
       if (!storedUser) {
-        // User hasn't registered yet
         setUser(null);
         setUserStatus("not_registered");
         return;
       }
 
-      // Check status with backend
       const userByPhone = await findUserByPhone(storedUser.phone);
 
       if (userByPhone) {
-        // Update stored user with latest data from backend
         await saveStoredUser(userByPhone);
         setUser(userByPhone);
         setUserStatus(userByPhone.status);
 
-        // Show alert based on status
         if (!userByPhone.status) {
           setUserStatus("not_registered");
         }
       }
     } catch (error: any) {
       console.error("Error checking user status:", error);
-      // If phone check fails, show stored user if available
       const storedUser = await getStoredUser();
       if (storedUser) {
         setUser(storedUser);
@@ -63,7 +73,6 @@ export default function ProfileScreen() {
     }
   }, []);
 
-  // Check status every time this tab is focused
   useFocusEffect(
     useCallback(() => {
       checkUserStatus();
@@ -85,6 +94,27 @@ export default function ProfileScreen() {
     }
   };
 
+  const userLanguages = useMemo<UserLanguage[]>(() => {
+    if (!Array.isArray(user?.languages)) {
+      return [];
+    }
+
+    return user.languages.filter(
+      (item: any) => typeof item?.language === "string" && typeof item?.level === "string",
+    );
+  }, [user]);
+
+  const commonHeader = (
+    <Header
+      title="profileHeaderTitle"
+      subTitle="profileHeaderSubtitle"
+      backgroundColors={{
+        light: ["#FFEED8", "#FFF7EE", "#FFFFFF"],
+        dark: ["#3B261C", "#2E211C", "#151718"],
+      }}
+    />
+  );
+
   if (!user || userStatus !== "approved") {
     return (
       <ParallaxScrollView
@@ -98,14 +128,7 @@ export default function ProfileScreen() {
           />
         }
       >
-        <Header
-          title="profileHeaderTitle"
-          subTitle="profileHeaderSubtitle"
-          backgroundColors={{
-            light: ["#FFEED8", "#FFF7EE", "#FFFFFF"],
-            dark: ["#3B261C", "#2E211C", "#151718"],
-          }}
-        />
+        {commonHeader}
         <ThemedView style={styles.container}>
           <ThemedText style={styles.statusMessage}>
             {statusLoading ? t("loading") : getStatusMessage()}
@@ -127,45 +150,81 @@ export default function ProfileScreen() {
         />
       }
     >
-      <Header
-        title="profileHeaderTitle"
-        subTitle="profileHeaderSubtitle"
-        backgroundColors={{
-          light: ["#FFEED8", "#FFF7EE", "#FFFFFF"],
-          dark: ["#3B261C", "#2E211C", "#151718"],
-        }}
-      />
+      {commonHeader}
+
       <ThemedView style={styles.container}>
-        {user.profileImageUrl ? (
-          <Image source={{ uri: user.profileImageUrl }} style={styles.avatar} />
-        ) : null}
-        <ThemedText>
-          {t("arabicName")}: {user.arabicName}
-        </ThemedText>
-        <ThemedText>
-          {t("englishName")}: {user.englishName}
-        </ThemedText>
-        <ThemedText>
-          {t("phone")}: {user.phone}
-        </ThemedText>
-        <ThemedText>
-          {t("role")}: {t(`roles.${user.role}`)}
-        </ThemedText>
-        <ThemedText>
-          {t("level")}: {t(`levels.${user.level}`)}
-        </ThemedText>
-        <ThemedText>
-          {t("branch")}: {user.branchId}
-        </ThemedText>
-        <ThemedText>
-          {t("language")}: {user.language}
-        </ThemedText>
+        <View style={[styles.profileCard, { backgroundColor: cardBackground }]}> 
+          {user.profileImageUrl ? (
+            <Image source={{ uri: user.profileImageUrl }} style={styles.avatar} />
+          ) : null}
+
+          <ThemedText style={styles.profileName} type="title">
+            {user.englishName}
+          </ThemedText>
+          <ThemedText style={[styles.profileSubName, { color: mutedColor }]}> 
+            {user.arabicName}
+          </ThemedText>
+
+          <View style={styles.infoGrid}>
+            <View style={styles.infoItem}>
+              <ThemedText style={[styles.infoLabel, { color: mutedColor }]}>
+                {t("phone")}
+              </ThemedText>
+              <ThemedText>{user.phone}</ThemedText>
+            </View>
+            <View style={styles.infoItem}>
+              <ThemedText style={[styles.infoLabel, { color: mutedColor }]}>
+                {t("role")}
+              </ThemedText>
+              <ThemedText>{t(`roles.${user.role}`)}</ThemedText>
+            </View>
+            <View style={styles.infoItem}>
+              <ThemedText style={[styles.infoLabel, { color: mutedColor }]}>
+                {t("branch")}
+              </ThemedText>
+              <ThemedText>{String(user.branchId || "-")}</ThemedText>
+            </View>
+            <View style={styles.infoItem}>
+              <ThemedText style={[styles.infoLabel, { color: mutedColor }]}>
+                {t("status")}
+              </ThemedText>
+              <ThemedText>{String(user.status || "-")}</ThemedText>
+            </View>
+          </View>
+        </View>
+
+        <View style={[styles.languagesCard, { backgroundColor: cardBackground }]}> 
+          <View style={styles.languagesCardHeader}>
+            <ThemedText type="subtitle">{t("languages")}</ThemedText>
+            <View style={styles.languagesCountChip}>
+              <ThemedText style={styles.languagesCountText}>
+                {userLanguages.length}
+              </ThemedText>
+            </View>
+          </View>
+
+          {userLanguages.length ? (
+            <View style={styles.languagesList}>
+              {userLanguages.map((item, index) => (
+                <View key={`${item.language}-${item.level}-${index}`} style={styles.languageTagRow}>
+                  <View style={styles.languageTag}>
+                    <ThemedText style={styles.languageTagText}>{item.language}</ThemedText>
+                  </View>
+                  <View style={styles.levelTag}>
+                    <ThemedText style={styles.levelTagText}>{item.level}</ThemedText>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <ThemedText style={{ color: mutedColor }}>
+              {t("noLanguagesAdded")}
+            </ThemedText>
+          )}
+        </View>
 
         <View style={{ marginTop: 12 }}>
-          <ModernButton
-            title={t("showQR")}
-            onPress={() => setQrVisible(true)}
-          />
+          <ModernButton title={t("showQR")} onPress={() => setQrVisible(true)} />
         </View>
 
         <QRModal
@@ -186,13 +245,110 @@ const styles = StyleSheet.create({
   },
   container: {
     padding: 16,
-    gap: 8,
+    gap: 12,
+  },
+  profileCard: {
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   avatar: {
     width: 96,
     height: 96,
     borderRadius: 48,
     marginBottom: 8,
+    alignSelf: "center",
+  },
+  profileName: {
+    fontSize: 24,
+    lineHeight: 28,
+    textAlign: "center",
+  },
+  profileSubName: {
+    textAlign: "center",
+    marginBottom: 14,
+  },
+  infoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  infoItem: {
+    width: "48%",
+    borderRadius: 12,
+    backgroundColor: "rgba(10,126,164,0.08)",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    gap: 4,
+  },
+  infoLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  languagesCard: {
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  languagesCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  languagesCountChip: {
+    minWidth: 30,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(10,126,164,0.16)",
+    alignItems: "center",
+  },
+  languagesCountText: {
+    color: "#0A7EA4",
+    fontWeight: "700",
+  },
+  languagesList: {
+    gap: 8,
+  },
+  languageTagRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(10,126,164,0.2)",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    backgroundColor: "rgba(10,126,164,0.05)",
+  },
+  languageTag: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: "rgba(10,126,164,0.16)",
+  },
+  languageTagText: {
+    color: "#0A7EA4",
+    fontWeight: "700",
+  },
+  levelTag: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.12)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  levelTagText: {
+    fontWeight: "700",
   },
   statusMessage: {
     fontSize: 16,

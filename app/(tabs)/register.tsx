@@ -12,21 +12,58 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import ModernButton from "@/components/ui/modern-button";
 import SelectInput from "@/components/ui/select-input";
-import {
-  Branches,
-  Languages,
-  Levels,
-  UserRoles,
-  UserStatuses,
-} from "@/constants/enums";
+import { Branches, UserRoles } from "@/constants/enums";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Alert, StyleSheet, TextInput, View } from "react-native";
+import { Alert, Pressable, StyleSheet, TextInput, View } from "react-native";
 import PhoneInput from "react-native-phone-number-input";
+
+type UserLanguageInput = {
+  language: string;
+  level: string;
+};
+
+type RegisterFormValues = {
+  arabicName: string;
+  englishName: string;
+  phone: string;
+  role: string;
+  branchId: string;
+  languages: UserLanguageInput[];
+};
+
+const AVAILABLE_LANGUAGES = [
+  { value: "English", labelKey: "languageOptionEnglish" },
+  { value: "Arabic", labelKey: "languageOptionArabic" },
+  { value: "French", labelKey: "languageOptionFrench" },
+  { value: "Turkish", labelKey: "languageOptionTurkish" },
+];
+
+const LANGUAGE_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
+const makeDefaultLanguage = (): UserLanguageInput => ({
+  language: AVAILABLE_LANGUAGES[0].value,
+  level: LANGUAGE_LEVELS[0],
+});
+
+const normalizeLanguages = (input: any): UserLanguageInput[] => {
+  if (!Array.isArray(input)) {
+    return [makeDefaultLanguage()];
+  }
+
+  const cleaned = input
+    .map((item: any) => ({
+      language: typeof item?.language === "string" ? item.language.trim() : "",
+      level: typeof item?.level === "string" ? item.level.trim() : "",
+    }))
+    .filter((item: UserLanguageInput) => item.language && item.level);
+
+  return cleaned.length ? cleaned : [makeDefaultLanguage()];
+};
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -34,65 +71,76 @@ export default function RegisterScreen() {
   const [isUpdate, setIsUpdate] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // form state will be managed by react-hook-form
   const {
     control,
     handleSubmit: onFormSubmit,
     formState: { errors },
     setValue,
     reset,
-  } = useForm({
+    watch,
+  } = useForm<RegisterFormValues>({
     defaultValues: {
       arabicName: "",
       englishName: "",
       phone: "",
       role: UserRoles[0],
-      language: Languages[0],
-      level: Levels[0],
       branchId: Branches[0].id,
+      languages: [makeDefaultLanguage()],
     },
   });
+
+  const { fields, append, remove, replace } = useFieldArray({
+    control,
+    name: "languages",
+  });
+
+  const watchedLanguages = watch("languages");
 
   const phoneInputRef = useRef<PhoneInput>(null);
   const [selectedCountryCode, setSelectedCountryCode] = useState("SY");
   const [loading, setLoading] = useState(false);
   const [hasStoredUser, setHasStoredUser] = useState(false);
-
-  // sign in state
   const [signInMode, setSignInMode] = useState(false);
 
+  const resetFormState = useCallback(() => {
+    reset({
+      arabicName: "",
+      englishName: "",
+      phone: "",
+      role: UserRoles[0],
+      branchId: Branches[0].id,
+      languages: [makeDefaultLanguage()],
+    });
+  }, [reset]);
+
   const loadUserData = useCallback(async () => {
-    // determine if user exists in storage
     try {
       const storedUser = await AsyncStorage.getItem("user");
       setHasStoredUser(!!storedUser);
     } catch {}
+
     try {
       const storedUser = await AsyncStorage.getItem("user");
       if (!storedUser) {
-        // No user stored, reset form
         setIsUpdate(false);
         setUserId(null);
-        reset();
+        resetFormState();
         return;
       }
 
       const user = JSON.parse(storedUser);
 
-      // Find user by phone to get latest data
       if (user.phone) {
         const userByPhone = await findUserByPhone(user.phone);
         if (userByPhone && userByPhone.status !== "not_found") {
-          // User exists, populate form with their data
           await saveStoredUser(userByPhone);
 
           setValue("arabicName", userByPhone.arabicName || "");
           setValue("englishName", userByPhone.englishName || "");
           setValue("phone", userByPhone.phone || "");
           setValue("role", userByPhone.role || UserRoles[0]);
-          setValue("language", userByPhone.language || Languages[0]);
-          setValue("level", userByPhone.level || Levels[0]);
           setValue("branchId", userByPhone.branchId || Branches[0].id);
+          replace(normalizeLanguages(userByPhone.languages));
 
           setUserId(userByPhone._id || userByPhone.id);
           setIsUpdate(true);
@@ -100,20 +148,17 @@ export default function RegisterScreen() {
         }
       }
 
-      // User not found on backend, but exists in storage - populate form
       setValue("arabicName", user.arabicName || "");
       setValue("englishName", user.englishName || "");
       setValue("phone", user.phone || "");
       setValue("role", user.role || UserRoles[0]);
-      setValue("language", user.language || Languages[0]);
-      setValue("level", user.level || Levels[0]);
       setValue("branchId", user.branchId || Branches[0].id);
+      replace(normalizeLanguages(user.languages));
 
       setUserId(user._id || user.id);
       setIsUpdate(false);
     } catch (error) {
       console.error("Error loading user data:", error);
-      // Load from storage at least
       try {
         const storedUser = await AsyncStorage.getItem("user");
         if (storedUser) {
@@ -122,46 +167,43 @@ export default function RegisterScreen() {
           setValue("englishName", user.englishName || "");
           setValue("phone", user.phone || "");
           setValue("role", user.role || UserRoles[0]);
-          setValue("language", user.language || Languages[0]);
-          setValue("level", user.level || Levels[0]);
           setValue("branchId", user.branchId || Branches[0].id);
+          replace(normalizeLanguages(user.languages));
           setUserId(user._id || user.id);
         }
       } catch (e) {
         console.error("Error setting stored user:", e);
       }
     }
-  }, [setValue, reset]);
+  }, [replace, resetFormState, setValue]);
 
-  // Load user data when tab is focused
   useFocusEffect(
     useCallback(() => {
       loadUserData();
     }, [loadUserData]),
   );
 
-  const handleSubmit = async (values: any) => {
-    // clear sign-in when registering/updating
+  const handleSubmit = async (values: RegisterFormValues) => {
     setSignInMode(false);
+
+    const payload = {
+      arabicName: values.arabicName,
+      englishName: values.englishName,
+      phone: values.phone,
+      role: values.role,
+      branchId: values.branchId,
+      languages: normalizeLanguages(values.languages),
+      profileImageUrl: "",
+    };
+
     try {
       setLoading(true);
 
       if (isUpdate && userId) {
-        // Update existing registration
-        const payload = {
-          ...values,
-          profileImageUrl: "",
-        };
         const response = await updateRegistration(userId, payload);
         await saveStoredUser(response.user || response);
         Alert.alert(t("success"), t("registrationUpdated"));
       } else {
-        // New registration
-        const payload = {
-          ...values,
-          status: UserStatuses[0],
-          profileImageUrl: "",
-        } as any;
         const response = await registerUser(payload);
         await saveStoredUser(response.user || response);
         Alert.alert(t("registrationSubmitted"), t("registrationUnderReview"));
@@ -196,11 +238,13 @@ export default function RegisterScreen() {
           dark: ["#0E2F25", "#14382E", "#151718"],
         }}
       />
+
       <If condition={!signInMode}>
         <ThemedView style={styles.container}>
           <ThemedText type="title" style={styles.title}>
             {isUpdate ? t("updateInformation") : t("register")}
           </ThemedText>
+
           <View style={styles.formGroup}>
             <ThemedText style={styles.label}>{t("arabicName")} *</ThemedText>
             <Controller
@@ -245,10 +289,7 @@ export default function RegisterScreen() {
               }}
               render={({ field: { value, onChange } }) => (
                 <TextInput
-                  style={[
-                    styles.input,
-                    errors.englishName && styles.errorInput,
-                  ]}
+                  style={[styles.input, errors.englishName && styles.errorInput]}
                   value={value}
                   onChangeText={onChange}
                   keyboardType="ascii-capable"
@@ -265,7 +306,7 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.formGroup}>
-            <ThemedText style={styles.label}>{t("phone")}</ThemedText>
+            <ThemedText style={styles.label}>{t("phone")} *</ThemedText>
             <Controller
               control={control}
               name="phone"
@@ -331,43 +372,79 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.formGroup}>
-            <ThemedText style={styles.label}>{t("language")}</ThemedText>
-            <Controller
-              control={control}
-              name="language"
-              rules={{ required: true }}
-              render={({ field: { value, onChange } }) => (
-                <SelectInput
-                  options={Languages.map((l) => ({
-                    label: l.toUpperCase(),
-                    value: l,
-                  }))}
-                  selectedValue={value}
-                  onValueChange={onChange}
-                  error={!!errors.language}
-                />
-              )}
-            />
-          </View>
+            <View style={styles.languagesHeader}>
+              <ThemedText style={styles.label}>{t("languages")} *</ThemedText>
+              <Pressable
+                style={styles.addLanguageButton}
+                onPress={() => append(makeDefaultLanguage())}
+              >
+                <ThemedText style={styles.addLanguageButtonText}>
+                  + {t("addLanguage")}
+                </ThemedText>
+              </Pressable>
+            </View>
 
-          <View style={styles.formGroup}>
-            <ThemedText style={styles.label}>{t("level")}</ThemedText>
-            <Controller
-              control={control}
-              name="level"
-              rules={{ required: true }}
-              render={({ field: { value, onChange } }) => (
-                <SelectInput
-                  options={Levels.map((lv) => ({
-                    label: t(`levels.${lv}`),
-                    value: lv,
-                  }))}
-                  selectedValue={value}
-                  onValueChange={onChange}
-                  error={!!errors.level}
+            {fields.map((field, index) => (
+              <View key={field.id} style={styles.languageRowCard}>
+                <View style={styles.languageRowTop}>
+                  <ThemedText type="defaultSemiBold">
+                    {t("languageEntry", { index: index + 1 })}
+                  </ThemedText>
+                  <Pressable
+                    disabled={fields.length === 1}
+                    onPress={() => {
+                      if (fields.length > 1) remove(index);
+                    }}
+                    style={[
+                      styles.removeLanguageButton,
+                      fields.length === 1 && styles.removeLanguageButtonDisabled,
+                    ]}
+                  >
+                    <ThemedText style={styles.removeLanguageButtonText}>
+                      {t("remove")}
+                    </ThemedText>
+                  </Pressable>
+                </View>
+
+                <Controller
+                  control={control}
+                  name={`languages.${index}.language`}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <SelectInput
+                      options={AVAILABLE_LANGUAGES.map((option) => ({
+                        label: t(option.labelKey),
+                        value: option.value,
+                      }))}
+                      selectedValue={value}
+                      onValueChange={onChange}
+                      error={!!(errors.languages as any)?.[index]?.language}
+                    />
+                  )}
                 />
-              )}
-            />
+
+                <Controller
+                  control={control}
+                  name={`languages.${index}.level`}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <SelectInput
+                      options={LANGUAGE_LEVELS.map((level) => ({
+                        label: level,
+                        value: level,
+                      }))}
+                      selectedValue={value}
+                      onValueChange={onChange}
+                      error={!!(errors.languages as any)?.[index]?.level}
+                    />
+                  )}
+                />
+              </View>
+            ))}
+
+            {!watchedLanguages?.length ? (
+              <ThemedText style={styles.errorText}>{t("languagesRequired")}</ThemedText>
+            ) : null}
           </View>
 
           <View style={styles.formGroup}>
@@ -379,7 +456,7 @@ export default function RegisterScreen() {
               render={({ field: { value, onChange } }) => (
                 <SelectInput
                   options={Branches.map((b) => ({
-                    label: b.name,
+                    label: t(`branches.${b.name}`),
                     value: b.id,
                   }))}
                   selectedValue={value}
@@ -406,7 +483,6 @@ export default function RegisterScreen() {
             />
           </View>
 
-          {/* sign-in workflow for users without stored account */}
           {!hasStoredUser && !signInMode && (
             <View>
               <ThemedText type="title" style={styles.orText}>
@@ -422,6 +498,7 @@ export default function RegisterScreen() {
           )}
         </ThemedView>
       </If>
+
       <If condition={signInMode}>
         <SignIn
           setHasStoredUser={setHasStoredUser}
@@ -437,9 +514,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 250,
     resizeMode: "cover",
-  },
-  scrollContent: {
-    flexGrow: 1,
   },
   container: {
     gap: 16,
@@ -529,6 +603,50 @@ const styles = StyleSheet.create({
     width: "auto",
     justifyContent: "center",
     alignItems: "center",
+  },
+  languagesHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  addLanguageButton: {
+    backgroundColor: "rgba(10,126,164,0.13)",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  addLanguageButtonText: {
+    color: "#0A7EA4",
+    fontWeight: "700",
+    fontSize: 12,
+  },
+  languageRowCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.08)",
+    backgroundColor: "rgba(255,255,255,0.5)",
+    padding: 10,
+    gap: 8,
+  },
+  languageRowTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  removeLanguageButton: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255,59,48,0.35)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  removeLanguageButtonDisabled: {
+    opacity: 0.4,
+  },
+  removeLanguageButtonText: {
+    color: "#D32F2F",
+    fontWeight: "700",
+    fontSize: 12,
   },
   orText: {
     transform: [{ translateY: -4 }],
