@@ -100,7 +100,8 @@ export default function ProfileScreen() {
     }
 
     return user.languages.filter(
-      (item: any) => typeof item?.language === "string" && typeof item?.level === "string",
+      (item: any) =>
+        typeof item?.language === "string" && typeof item?.level === "string",
     );
   }, [user]);
 
@@ -153,15 +154,18 @@ export default function ProfileScreen() {
       {commonHeader}
 
       <ThemedView style={styles.container}>
-        <View style={[styles.profileCard, { backgroundColor: cardBackground }]}> 
+        <View style={[styles.profileCard, { backgroundColor: cardBackground }]}>
           {user.profileImageUrl ? (
-            <Image source={{ uri: user.profileImageUrl }} style={styles.avatar} />
+            <Image
+              source={{ uri: user.profileImageUrl }}
+              style={styles.avatar}
+            />
           ) : null}
 
           <ThemedText style={styles.profileName} type="title">
             {user.englishName}
           </ThemedText>
-          <ThemedText style={[styles.profileSubName, { color: mutedColor }]}> 
+          <ThemedText style={[styles.profileSubName, { color: mutedColor }]}>
             {user.arabicName}
           </ThemedText>
 
@@ -193,7 +197,9 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View style={[styles.languagesCard, { backgroundColor: cardBackground }]}> 
+        <View
+          style={[styles.languagesCard, { backgroundColor: cardBackground }]}
+        >
           <View style={styles.languagesCardHeader}>
             <ThemedText type="subtitle">{t("languages")}</ThemedText>
             <View style={styles.languagesCountChip}>
@@ -206,12 +212,19 @@ export default function ProfileScreen() {
           {userLanguages.length ? (
             <View style={styles.languagesList}>
               {userLanguages.map((item, index) => (
-                <View key={`${item.language}-${item.level}-${index}`} style={styles.languageTagRow}>
+                <View
+                  key={`${item.language}-${item.level}-${index}`}
+                  style={styles.languageTagRow}
+                >
                   <View style={styles.languageTag}>
-                    <ThemedText style={styles.languageTagText}>{item.language}</ThemedText>
+                    <ThemedText style={styles.languageTagText}>
+                      {item.language}
+                    </ThemedText>
                   </View>
                   <View style={styles.levelTag}>
-                    <ThemedText style={styles.levelTagText}>{item.level}</ThemedText>
+                    <ThemedText style={styles.levelTagText}>
+                      {item.level}
+                    </ThemedText>
                   </View>
                 </View>
               ))}
@@ -224,7 +237,10 @@ export default function ProfileScreen() {
         </View>
 
         <View style={{ marginTop: 12 }}>
-          <ModernButton title={t("showQR")} onPress={() => setQrVisible(true)} />
+          <ModernButton
+            title={t("showQR")}
+            onPress={() => setQrVisible(true)}
+          />
         </View>
 
         <QRModal
@@ -244,7 +260,7 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
   },
   container: {
-    padding: 16,
+    padding: 2,
     gap: 12,
   },
   profileCard: {

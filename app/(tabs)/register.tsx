@@ -289,7 +289,10 @@ export default function RegisterScreen() {
               }}
               render={({ field: { value, onChange } }) => (
                 <TextInput
-                  style={[styles.input, errors.englishName && styles.errorInput]}
+                  style={[
+                    styles.input,
+                    errors.englishName && styles.errorInput,
+                  ]}
                   value={value}
                   onChangeText={onChange}
                   keyboardType="ascii-capable"
@@ -397,7 +400,8 @@ export default function RegisterScreen() {
                     }}
                     style={[
                       styles.removeLanguageButton,
-                      fields.length === 1 && styles.removeLanguageButtonDisabled,
+                      fields.length === 1 &&
+                        styles.removeLanguageButtonDisabled,
                     ]}
                   >
                     <ThemedText style={styles.removeLanguageButtonText}>
@@ -443,7 +447,9 @@ export default function RegisterScreen() {
             ))}
 
             {!watchedLanguages?.length ? (
-              <ThemedText style={styles.errorText}>{t("languagesRequired")}</ThemedText>
+              <ThemedText style={styles.errorText}>
+                {t("languagesRequired")}
+              </ThemedText>
             ) : null}
           </View>
 
