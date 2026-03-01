@@ -9,6 +9,7 @@ import QRModal from "@/components/qr-modal";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import ModernButton from "@/components/ui/modern-button";
+import { Branches } from "@/constants/enums";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Image as ExpoImage } from "expo-image";
 import { useFocusEffect } from "expo-router";
@@ -92,6 +93,49 @@ export default function ProfileScreen() {
       default:
         return t("notLoggedIn");
     }
+  };
+
+  const getBranchLabel = (rawBranch: any) => {
+    if (rawBranch && typeof rawBranch === "object") {
+      const branchName =
+        typeof rawBranch.name === "string" ? rawBranch.name : undefined;
+      if (branchName) {
+        return t(`branches.${branchName}`, { defaultValue: branchName });
+      }
+
+      const branchId =
+        typeof rawBranch._id === "string"
+          ? rawBranch._id
+          : typeof rawBranch.id === "string"
+            ? rawBranch.id
+            : undefined;
+      if (branchId) {
+        const localBranch = Branches.find((branch) => branch.id === branchId);
+        if (localBranch) {
+          return t(`branches.${localBranch.name}`, {
+            defaultValue: localBranch.name,
+          });
+        }
+      }
+    }
+
+    if (typeof rawBranch === "string") {
+      const localBranch = Branches.find((branch) => branch.id === rawBranch);
+      if (localBranch) {
+        return t(`branches.${localBranch.name}`, {
+          defaultValue: localBranch.name,
+        });
+      }
+    }
+
+    return t("unknownBranch");
+  };
+
+  const getStatusLabel = (status: unknown) => {
+    if (typeof status !== "string" || !status.trim()) {
+      return t("statuses.unknown");
+    }
+    return t(`statuses.${status}`, { defaultValue: status });
   };
 
   const userLanguages = useMemo<UserLanguage[]>(() => {
@@ -186,13 +230,13 @@ export default function ProfileScreen() {
               <ThemedText style={[styles.infoLabel, { color: mutedColor }]}>
                 {t("branch")}
               </ThemedText>
-              <ThemedText>{String(user.branchId || "-")}</ThemedText>
+              <ThemedText>{getBranchLabel(user.branchId)}</ThemedText>
             </View>
             <View style={styles.infoItem}>
               <ThemedText style={[styles.infoLabel, { color: mutedColor }]}>
                 {t("status")}
               </ThemedText>
-              <ThemedText>{String(user.status || "-")}</ThemedText>
+              <ThemedText>{getStatusLabel(user.status)}</ThemedText>
             </View>
           </View>
         </View>
@@ -281,7 +325,7 @@ const styles = StyleSheet.create({
   },
   profileName: {
     fontSize: 24,
-    lineHeight: 28,
+    lineHeight: 40,
     textAlign: "center",
   },
   profileSubName: {

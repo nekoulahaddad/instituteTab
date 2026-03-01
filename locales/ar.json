@@ -94,5 +94,12 @@
   "languageOptionArabic": "العربية",
   "languageOptionFrench": "الفرنسية",
   "languageOptionTurkish": "التركية",
-  "noLanguagesAdded": "لم تتم إضافة أي لغات بعد."
+  "noLanguagesAdded": "لم تتم إضافة أي لغات بعد.",
+  "unknownBranch": "فرع غير معروف",
+  "statuses": {
+    "pending": "قيد المراجعة",
+    "approved": "مقبول",
+    "canceled": "مرفوض",
+    "unknown": "غير معروف"
+  }
 }

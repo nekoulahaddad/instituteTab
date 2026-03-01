@@ -30,6 +30,7 @@
   "level": "Level",
   "branch": "Branch",
   "status": "Status",
+  "unknownBranch": "Unknown branch",
   "required": "Required field",
   "arabicNameRequired": "Arabic name is required",
   "arabicNameArabicOnly": "Arabic name must contain only Arabic letters",
@@ -54,6 +55,12 @@
     "employee": "Employee",
     "admin": "Admin",
     "super_admin": "Super Admin"
+  },
+  "statuses": {
+    "pending": "Pending",
+    "approved": "Approved",
+    "canceled": "Canceled",
+    "unknown": "Unknown"
   },
   "levels": {
     "beginner": "Beginner",
