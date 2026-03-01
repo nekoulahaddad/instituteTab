@@ -102,5 +102,7 @@
     "canceled": "مرفوض",
     "unknown": "غير معروف"
   },
-  "languagesLoadFailed": "تعذر تحميل اللغات من الخادم."
+  "languagesLoadFailed": "تعذر تحميل اللغات من الخادم.",
+  "branchRequired": "الفرع مطلوب",
+  "branchesLoadFailed": "تعذر تحميل الفروع من الخادم."
 }

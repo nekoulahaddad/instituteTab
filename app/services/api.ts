@@ -34,6 +34,14 @@ export type CatalogLanguage = {
   levels: CatalogLevel[];
 };
 
+export type CatalogBranch = {
+  _id: string;
+  name: LocalizedText;
+  code?: string;
+  address?: LocalizedText;
+  phone?: string;
+};
+
 export async function getLatestNews() {
   try {
     const response = await api.get("/news/latest");
@@ -85,6 +93,34 @@ export async function getLanguagesCatalog(): Promise<CatalogLanguage[]> {
       error.response?.data?.message ||
       error.message ||
       "Failed to load languages";
+    throw new Error(message);
+  }
+}
+
+export async function getBranchesCatalog(): Promise<CatalogBranch[]> {
+  try {
+    const response = await api.get("/branches");
+    const raw = response.data;
+
+    if (Array.isArray(raw)) {
+      return raw;
+    }
+
+    if (Array.isArray(raw?.data)) {
+      return raw.data;
+    }
+
+    if (Array.isArray(raw?.items)) {
+      return raw.items;
+    }
+
+    return [];
+  } catch (error: any) {
+    console.error("Get branches catalog error:", error);
+    const message =
+      error.response?.data?.message ||
+      error.message ||
+      "Failed to load branches";
     throw new Error(message);
   }
 }

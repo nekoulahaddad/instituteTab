@@ -1,7 +1,9 @@
 import {
+  CatalogBranch,
   CatalogLanguage,
   CatalogLevel,
   findUserByPhone,
+  getBranchesCatalog,
   getLanguagesCatalog,
   getStoredUser,
   saveStoredUser,
@@ -12,7 +14,6 @@ import QRModal from "@/components/qr-modal";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import ModernButton from "@/components/ui/modern-button";
-import { Branches } from "@/constants/enums";
 import { useLanguage } from "@/context/LanguageContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Image as ExpoImage } from "expo-image";
@@ -62,6 +63,55 @@ const findLevelByAnyValue = (
   });
 };
 
+const findBranchByAnyValue = (
+  catalog: CatalogBranch[],
+  value: unknown,
+): CatalogBranch | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  if (typeof value === "object") {
+    const raw = value as any;
+    const idCandidate =
+      typeof raw._id === "string"
+        ? raw._id
+        : typeof raw.id === "string"
+          ? raw.id
+          : undefined;
+
+    if (idCandidate) {
+      return catalog.find((item) => item._id === idCandidate);
+    }
+
+    const nameCandidate =
+      typeof raw.name?.en === "string"
+        ? raw.name.en
+        : typeof raw.name === "string"
+          ? raw.name
+          : undefined;
+    if (nameCandidate) {
+      return catalog.find(
+        (item) => item.name.en.toLowerCase() === nameCandidate.toLowerCase(),
+      );
+    }
+  }
+
+  if (typeof value !== "string" || !value.trim()) {
+    return undefined;
+  }
+
+  const input = value.trim().toLowerCase();
+  return catalog.find((item) => {
+    return (
+      item._id.toLowerCase() === input ||
+      item.name.en.toLowerCase() === input ||
+      item.name.ar.toLowerCase() === input ||
+      item.code?.toLowerCase() === input
+    );
+  });
+};
+
 export default function ProfileScreen() {
   const { t } = useTranslation();
   const { language: appLanguage } = useLanguage();
@@ -70,6 +120,7 @@ export default function ProfileScreen() {
   const [statusLoading, setStatusLoading] = useState(true);
   const [userStatus, setUserStatus] = useState<string | null>(null);
   const [languageCatalog, setLanguageCatalog] = useState<CatalogLanguage[]>([]);
+  const [branchCatalog, setBranchCatalog] = useState<CatalogBranch[]>([]);
 
   const mutedColor = useThemeColor(
     { light: "#5B6670", dark: "#A9B4BE" },
@@ -125,9 +176,22 @@ export default function ProfileScreen() {
     }
   }, []);
 
+  const loadBranchCatalog = useCallback(async () => {
+    try {
+      const catalog = await getBranchesCatalog();
+      setBranchCatalog(catalog);
+    } catch (error) {
+      console.error("Error loading branches catalog:", error);
+    }
+  }, []);
+
   useEffect(() => {
     loadLanguageCatalog();
   }, [loadLanguageCatalog]);
+
+  useEffect(() => {
+    loadBranchCatalog();
+  }, [loadBranchCatalog]);
 
   useFocusEffect(
     useCallback(() => {
@@ -151,36 +215,9 @@ export default function ProfileScreen() {
   };
 
   const getBranchLabel = (rawBranch: any) => {
-    if (rawBranch && typeof rawBranch === "object") {
-      const branchName =
-        typeof rawBranch.name === "string" ? rawBranch.name : undefined;
-      if (branchName) {
-        return t(`branches.${branchName}`, { defaultValue: branchName });
-      }
-
-      const branchId =
-        typeof rawBranch._id === "string"
-          ? rawBranch._id
-          : typeof rawBranch.id === "string"
-            ? rawBranch.id
-            : undefined;
-      if (branchId) {
-        const localBranch = Branches.find((branch) => branch.id === branchId);
-        if (localBranch) {
-          return t(`branches.${localBranch.name}`, {
-            defaultValue: localBranch.name,
-          });
-        }
-      }
-    }
-
-    if (typeof rawBranch === "string") {
-      const localBranch = Branches.find((branch) => branch.id === rawBranch);
-      if (localBranch) {
-        return t(`branches.${localBranch.name}`, {
-          defaultValue: localBranch.name,
-        });
-      }
+    const match = findBranchByAnyValue(branchCatalog, rawBranch);
+    if (match) {
+      return appLanguage === "ar" ? match.name.ar : match.name.en;
     }
 
     return t("unknownBranch");

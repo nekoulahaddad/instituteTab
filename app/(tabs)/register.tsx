@@ -1,7 +1,9 @@
 import {
+  CatalogBranch,
   CatalogLanguage,
   CatalogLevel,
   findUserByPhone,
+  getBranchesCatalog,
   getLanguagesCatalog,
   registerUser,
   saveStoredUser,
@@ -15,7 +17,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import ModernButton from "@/components/ui/modern-button";
 import SelectInput from "@/components/ui/select-input";
-import { Branches, UserRoles } from "@/constants/enums";
+import { UserRoles } from "@/constants/enums";
 import { useLanguage } from "@/context/LanguageContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
@@ -86,6 +88,58 @@ const createDefaultLanguageEntry = (catalog: CatalogLanguage[]): UserLanguageInp
   };
 };
 
+const findBranchByAnyValue = (
+  catalog: CatalogBranch[],
+  value: unknown,
+): CatalogBranch | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  if (typeof value === "object") {
+    const raw = value as any;
+    const idCandidate =
+      typeof raw._id === "string"
+        ? raw._id
+        : typeof raw.id === "string"
+          ? raw.id
+          : undefined;
+    if (idCandidate) {
+      return catalog.find((item) => item._id === idCandidate);
+    }
+  }
+
+  if (typeof value !== "string" || !value.trim()) {
+    return undefined;
+  }
+
+  const input = value.trim().toLowerCase();
+  return catalog.find((item) => {
+    return (
+      item._id.toLowerCase() === input ||
+      item.name.en.toLowerCase() === input ||
+      item.name.ar.toLowerCase() === input ||
+      item.code?.toLowerCase() === input
+    );
+  });
+};
+
+const normalizeBranchId = (
+  value: unknown,
+  catalog: CatalogBranch[],
+): string => {
+  const matched = findBranchByAnyValue(catalog, value);
+  if (matched) {
+    return matched._id;
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+
+  return catalog[0]?._id || "";
+};
+
 const normalizeLanguages = (
   input: any,
   catalog: CatalogLanguage[],
@@ -123,8 +177,11 @@ export default function RegisterScreen() {
   const [isUpdate, setIsUpdate] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [languageCatalog, setLanguageCatalog] = useState<CatalogLanguage[]>([]);
+  const [branchCatalog, setBranchCatalog] = useState<CatalogBranch[]>([]);
   const [languagesLoading, setLanguagesLoading] = useState(false);
   const [languagesLoadError, setLanguagesLoadError] = useState<string | null>(null);
+  const [branchesLoading, setBranchesLoading] = useState(false);
+  const [branchesLoadError, setBranchesLoadError] = useState<string | null>(null);
 
   const {
     control,
@@ -140,7 +197,7 @@ export default function RegisterScreen() {
       englishName: "",
       phone: "",
       role: UserRoles[0],
-      branchId: Branches[0].id,
+      branchId: "",
       languages: [{ language: "", level: "" }],
     },
   });
@@ -169,6 +226,11 @@ export default function RegisterScreen() {
     [appLanguage],
   );
 
+  const getLocalizedBranchName = useCallback(
+    (item: CatalogBranch) => (appLanguage === "ar" ? item.name.ar : item.name.en),
+    [appLanguage],
+  );
+
   const loadLanguageCatalog = useCallback(async () => {
     try {
       setLanguagesLoadError(null);
@@ -182,9 +244,26 @@ export default function RegisterScreen() {
     }
   }, [t]);
 
+  const loadBranchCatalog = useCallback(async () => {
+    try {
+      setBranchesLoadError(null);
+      setBranchesLoading(true);
+      const catalog = await getBranchesCatalog();
+      setBranchCatalog(catalog);
+    } catch (error: any) {
+      setBranchesLoadError(error.message || t("branchesLoadFailed"));
+    } finally {
+      setBranchesLoading(false);
+    }
+  }, [t]);
+
   useEffect(() => {
     loadLanguageCatalog();
   }, [loadLanguageCatalog]);
+
+  useEffect(() => {
+    loadBranchCatalog();
+  }, [loadBranchCatalog]);
 
   useEffect(() => {
     if (!languageCatalog.length) {
@@ -196,16 +275,25 @@ export default function RegisterScreen() {
     replace(mapped);
   }, [getValues, languageCatalog, replace]);
 
+  useEffect(() => {
+    if (!branchCatalog.length) {
+      return;
+    }
+
+    const currentBranch = getValues("branchId");
+    setValue("branchId", normalizeBranchId(currentBranch, branchCatalog));
+  }, [branchCatalog, getValues, setValue]);
+
   const resetFormState = useCallback(() => {
     reset({
       arabicName: "",
       englishName: "",
       phone: "",
       role: UserRoles[0],
-      branchId: Branches[0].id,
+      branchId: branchCatalog[0]?._id || "",
       languages: [createDefaultLanguageEntry(languageCatalog)],
     });
-  }, [languageCatalog, reset]);
+  }, [branchCatalog, languageCatalog, reset]);
 
   const loadUserData = useCallback(async () => {
     try {
@@ -233,7 +321,7 @@ export default function RegisterScreen() {
           setValue("englishName", userByPhone.englishName || "");
           setValue("phone", userByPhone.phone || "");
           setValue("role", userByPhone.role || UserRoles[0]);
-          setValue("branchId", userByPhone.branchId || Branches[0].id);
+          setValue("branchId", normalizeBranchId(userByPhone.branchId, branchCatalog));
           replace(normalizeLanguages(userByPhone.languages, languageCatalog));
 
           setUserId(userByPhone._id || userByPhone.id);
@@ -246,7 +334,7 @@ export default function RegisterScreen() {
       setValue("englishName", user.englishName || "");
       setValue("phone", user.phone || "");
       setValue("role", user.role || UserRoles[0]);
-      setValue("branchId", user.branchId || Branches[0].id);
+      setValue("branchId", normalizeBranchId(user.branchId, branchCatalog));
       replace(normalizeLanguages(user.languages, languageCatalog));
 
       setUserId(user._id || user.id);
@@ -261,7 +349,7 @@ export default function RegisterScreen() {
           setValue("englishName", user.englishName || "");
           setValue("phone", user.phone || "");
           setValue("role", user.role || UserRoles[0]);
-          setValue("branchId", user.branchId || Branches[0].id);
+          setValue("branchId", normalizeBranchId(user.branchId, branchCatalog));
           replace(normalizeLanguages(user.languages, languageCatalog));
           setUserId(user._id || user.id);
         }
@@ -269,7 +357,7 @@ export default function RegisterScreen() {
         console.error("Error setting stored user:", e);
       }
     }
-  }, [languageCatalog, replace, resetFormState, setValue]);
+  }, [branchCatalog, languageCatalog, replace, resetFormState, setValue]);
 
   useFocusEffect(
     useCallback(() => {
@@ -287,6 +375,11 @@ export default function RegisterScreen() {
       normalizedLanguages.some((item) => !item.language || !item.level)
     ) {
       Alert.alert(t("error"), t("languagesRequired"));
+      return;
+    }
+
+    if (!values.branchId) {
+      Alert.alert(t("error"), t("branchRequired"));
       return;
     }
 
@@ -589,15 +682,21 @@ export default function RegisterScreen() {
 
           <View style={styles.formGroup}>
             <ThemedText style={styles.label}>{t("branch")}</ThemedText>
+            {branchesLoading ? (
+              <ThemedText style={styles.loadingHint}>{t("loading")}</ThemedText>
+            ) : null}
+            {branchesLoadError ? (
+              <ThemedText style={styles.errorText}>{branchesLoadError}</ThemedText>
+            ) : null}
             <Controller
               control={control}
               name="branchId"
               rules={{ required: true }}
               render={({ field: { value, onChange } }) => (
                 <SelectInput
-                  options={Branches.map((b) => ({
-                    label: t(`branches.${b.name}`),
-                    value: b.id,
+                  options={branchCatalog.map((branch) => ({
+                    label: getLocalizedBranchName(branch),
+                    value: branch._id,
                   }))}
                   selectedValue={value}
                   onValueChange={onChange}
