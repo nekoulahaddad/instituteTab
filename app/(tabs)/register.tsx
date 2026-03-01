@@ -1,5 +1,8 @@
 import {
+  CatalogLanguage,
+  CatalogLevel,
   findUserByPhone,
+  getLanguagesCatalog,
   registerUser,
   saveStoredUser,
   updateRegistration,
@@ -13,10 +16,11 @@ import { ThemedView } from "@/components/themed-view";
 import ModernButton from "@/components/ui/modern-button";
 import SelectInput from "@/components/ui/select-input";
 import { Branches, UserRoles } from "@/constants/enums";
+import { useLanguage } from "@/context/LanguageContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Alert, Pressable, StyleSheet, TextInput, View } from "react-native";
@@ -36,46 +40,98 @@ type RegisterFormValues = {
   languages: UserLanguageInput[];
 };
 
-const AVAILABLE_LANGUAGES = [
-  { value: "English", labelKey: "languageOptionEnglish" },
-  { value: "Arabic", labelKey: "languageOptionArabic" },
-  { value: "French", labelKey: "languageOptionFrench" },
-  { value: "Turkish", labelKey: "languageOptionTurkish" },
-];
-
-const LANGUAGE_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
-
-const makeDefaultLanguage = (): UserLanguageInput => ({
-  language: AVAILABLE_LANGUAGES[0].value,
-  level: LANGUAGE_LEVELS[0],
-});
-
-const normalizeLanguages = (input: any): UserLanguageInput[] => {
-  if (!Array.isArray(input)) {
-    return [makeDefaultLanguage()];
+const findLanguageByAnyValue = (
+  catalog: CatalogLanguage[],
+  value: unknown,
+): CatalogLanguage | undefined => {
+  if (typeof value !== "string" || !value.trim()) {
+    return undefined;
   }
 
-  const cleaned = input
-    .map((item: any) => ({
-      language: typeof item?.language === "string" ? item.language.trim() : "",
-      level: typeof item?.level === "string" ? item.level.trim() : "",
-    }))
-    .filter((item: UserLanguageInput) => item.language && item.level);
+  const input = value.trim().toLowerCase();
+  return catalog.find((item) => {
+    return (
+      item._id.toLowerCase() === input ||
+      item.language.en.toLowerCase() === input ||
+      item.language.ar.toLowerCase() === input
+    );
+  });
+};
 
-  return cleaned.length ? cleaned : [makeDefaultLanguage()];
+const findLevelByAnyValue = (
+  levels: CatalogLevel[],
+  value: unknown,
+): CatalogLevel | undefined => {
+  if (typeof value !== "string" || !value.trim()) {
+    return undefined;
+  }
+
+  const input = value.trim().toLowerCase();
+  return levels.find((item) => {
+    return (
+      item._id.toLowerCase() === input ||
+      item.en.toLowerCase() === input ||
+      item.ar.toLowerCase() === input
+    );
+  });
+};
+
+const createDefaultLanguageEntry = (catalog: CatalogLanguage[]): UserLanguageInput => {
+  const firstLanguage = catalog[0];
+  const firstLevel = firstLanguage?.levels?.[0];
+
+  return {
+    language: firstLanguage?.language?.en || "",
+    level: firstLevel?.en || "",
+  };
+};
+
+const normalizeLanguages = (
+  input: any,
+  catalog: CatalogLanguage[],
+): UserLanguageInput[] => {
+  if (!Array.isArray(input)) {
+    return [createDefaultLanguageEntry(catalog)];
+  }
+
+  const normalized = input.map((item: any) => {
+    const rawLanguage = typeof item?.language === "string" ? item.language : "";
+    const languageOption = findLanguageByAnyValue(catalog, rawLanguage);
+
+    const languageValue = languageOption?.language.en || rawLanguage || "";
+    const availableLevels = languageOption?.levels || [];
+
+    const rawLevel = typeof item?.level === "string" ? item.level : "";
+    const levelMatch = findLevelByAnyValue(availableLevels, rawLevel);
+    const levelValue = levelMatch?.en || rawLevel || availableLevels[0]?.en || "";
+
+    return {
+      language: languageValue,
+      level: levelValue,
+    };
+  });
+
+  const valid = normalized.filter((item) => item.language && item.level);
+  return valid.length ? valid : [createDefaultLanguageEntry(catalog)];
 };
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { language: appLanguage } = useLanguage();
+
   const [isUpdate, setIsUpdate] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [languageCatalog, setLanguageCatalog] = useState<CatalogLanguage[]>([]);
+  const [languagesLoading, setLanguagesLoading] = useState(false);
+  const [languagesLoadError, setLanguagesLoadError] = useState<string | null>(null);
 
   const {
     control,
     handleSubmit: onFormSubmit,
     formState: { errors },
     setValue,
+    getValues,
     reset,
     watch,
   } = useForm<RegisterFormValues>({
@@ -85,7 +141,7 @@ export default function RegisterScreen() {
       phone: "",
       role: UserRoles[0],
       branchId: Branches[0].id,
-      languages: [makeDefaultLanguage()],
+      languages: [{ language: "", level: "" }],
     },
   });
 
@@ -102,6 +158,44 @@ export default function RegisterScreen() {
   const [hasStoredUser, setHasStoredUser] = useState(false);
   const [signInMode, setSignInMode] = useState(false);
 
+  const getLocalizedLanguageName = useCallback(
+    (item: CatalogLanguage) =>
+      appLanguage === "ar" ? item.language.ar : item.language.en,
+    [appLanguage],
+  );
+
+  const getLocalizedLevelName = useCallback(
+    (item: CatalogLevel) => (appLanguage === "ar" ? item.ar : item.en),
+    [appLanguage],
+  );
+
+  const loadLanguageCatalog = useCallback(async () => {
+    try {
+      setLanguagesLoadError(null);
+      setLanguagesLoading(true);
+      const catalog = await getLanguagesCatalog();
+      setLanguageCatalog(catalog);
+    } catch (error: any) {
+      setLanguagesLoadError(error.message || t("languagesLoadFailed"));
+    } finally {
+      setLanguagesLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    loadLanguageCatalog();
+  }, [loadLanguageCatalog]);
+
+  useEffect(() => {
+    if (!languageCatalog.length) {
+      return;
+    }
+
+    const current = getValues("languages");
+    const mapped = normalizeLanguages(current, languageCatalog);
+    replace(mapped);
+  }, [getValues, languageCatalog, replace]);
+
   const resetFormState = useCallback(() => {
     reset({
       arabicName: "",
@@ -109,9 +203,9 @@ export default function RegisterScreen() {
       phone: "",
       role: UserRoles[0],
       branchId: Branches[0].id,
-      languages: [makeDefaultLanguage()],
+      languages: [createDefaultLanguageEntry(languageCatalog)],
     });
-  }, [reset]);
+  }, [languageCatalog, reset]);
 
   const loadUserData = useCallback(async () => {
     try {
@@ -140,7 +234,7 @@ export default function RegisterScreen() {
           setValue("phone", userByPhone.phone || "");
           setValue("role", userByPhone.role || UserRoles[0]);
           setValue("branchId", userByPhone.branchId || Branches[0].id);
-          replace(normalizeLanguages(userByPhone.languages));
+          replace(normalizeLanguages(userByPhone.languages, languageCatalog));
 
           setUserId(userByPhone._id || userByPhone.id);
           setIsUpdate(true);
@@ -153,7 +247,7 @@ export default function RegisterScreen() {
       setValue("phone", user.phone || "");
       setValue("role", user.role || UserRoles[0]);
       setValue("branchId", user.branchId || Branches[0].id);
-      replace(normalizeLanguages(user.languages));
+      replace(normalizeLanguages(user.languages, languageCatalog));
 
       setUserId(user._id || user.id);
       setIsUpdate(false);
@@ -168,14 +262,14 @@ export default function RegisterScreen() {
           setValue("phone", user.phone || "");
           setValue("role", user.role || UserRoles[0]);
           setValue("branchId", user.branchId || Branches[0].id);
-          replace(normalizeLanguages(user.languages));
+          replace(normalizeLanguages(user.languages, languageCatalog));
           setUserId(user._id || user.id);
         }
       } catch (e) {
         console.error("Error setting stored user:", e);
       }
     }
-  }, [replace, resetFormState, setValue]);
+  }, [languageCatalog, replace, resetFormState, setValue]);
 
   useFocusEffect(
     useCallback(() => {
@@ -186,13 +280,23 @@ export default function RegisterScreen() {
   const handleSubmit = async (values: RegisterFormValues) => {
     setSignInMode(false);
 
+    const normalizedLanguages = normalizeLanguages(values.languages, languageCatalog);
+
+    if (
+      !normalizedLanguages.length ||
+      normalizedLanguages.some((item) => !item.language || !item.level)
+    ) {
+      Alert.alert(t("error"), t("languagesRequired"));
+      return;
+    }
+
     const payload = {
       arabicName: values.arabicName,
       englishName: values.englishName,
       phone: values.phone,
       role: values.role,
       branchId: values.branchId,
-      languages: normalizeLanguages(values.languages),
+      languages: normalizedLanguages,
       profileImageUrl: "",
     };
 
@@ -289,10 +393,7 @@ export default function RegisterScreen() {
               }}
               render={({ field: { value, onChange } }) => (
                 <TextInput
-                  style={[
-                    styles.input,
-                    errors.englishName && styles.errorInput,
-                  ]}
+                  style={[styles.input, errors.englishName && styles.errorInput]}
                   value={value}
                   onChangeText={onChange}
                   keyboardType="ascii-capable"
@@ -379,7 +480,7 @@ export default function RegisterScreen() {
               <ThemedText style={styles.label}>{t("languages")} *</ThemedText>
               <Pressable
                 style={styles.addLanguageButton}
-                onPress={() => append(makeDefaultLanguage())}
+                onPress={() => append(createDefaultLanguageEntry(languageCatalog))}
               >
                 <ThemedText style={styles.addLanguageButtonText}>
                   + {t("addLanguage")}
@@ -387,69 +488,102 @@ export default function RegisterScreen() {
               </Pressable>
             </View>
 
-            {fields.map((field, index) => (
-              <View key={field.id} style={styles.languageRowCard}>
-                <View style={styles.languageRowTop}>
-                  <ThemedText type="defaultSemiBold">
-                    {t("languageEntry", { index: index + 1 })}
-                  </ThemedText>
-                  <Pressable
-                    disabled={fields.length === 1}
-                    onPress={() => {
-                      if (fields.length > 1) remove(index);
-                    }}
-                    style={[
-                      styles.removeLanguageButton,
-                      fields.length === 1 &&
-                        styles.removeLanguageButtonDisabled,
-                    ]}
-                  >
-                    <ThemedText style={styles.removeLanguageButtonText}>
-                      {t("remove")}
+            {languagesLoading ? (
+              <ThemedText style={styles.loadingHint}>{t("loading")}</ThemedText>
+            ) : null}
+            {languagesLoadError ? (
+              <ThemedText style={styles.errorText}>{languagesLoadError}</ThemedText>
+            ) : null}
+
+            {fields.map((field, index) => {
+              const selectedLanguage = watchedLanguages?.[index]?.language;
+              const selectedLanguageOption = findLanguageByAnyValue(
+                languageCatalog,
+                selectedLanguage,
+              );
+              const levelOptions = (selectedLanguageOption?.levels || []).map((level) => ({
+                label: getLocalizedLevelName(level),
+                value: level.en,
+              }));
+
+              return (
+                <View key={field.id} style={styles.languageRowCard}>
+                  <View style={styles.languageRowTop}>
+                    <ThemedText type="defaultSemiBold">
+                      {t("languageEntry", { index: index + 1 })}
                     </ThemedText>
-                  </Pressable>
+                    <Pressable
+                      disabled={fields.length === 1}
+                      onPress={() => {
+                        if (fields.length > 1) remove(index);
+                      }}
+                      style={[
+                        styles.removeLanguageButton,
+                        fields.length === 1 && styles.removeLanguageButtonDisabled,
+                      ]}
+                    >
+                      <ThemedText style={styles.removeLanguageButtonText}>
+                        {t("remove")}
+                      </ThemedText>
+                    </Pressable>
+                  </View>
+
+                  <Controller
+                    control={control}
+                    name={`languages.${index}.language`}
+                    rules={{ required: true }}
+                    render={({ field: { value, onChange } }) => (
+                      <SelectInput
+                        options={languageCatalog.map((option) => ({
+                          label: getLocalizedLanguageName(option),
+                          value: option.language.en,
+                        }))}
+                        selectedValue={value}
+                        onValueChange={(selectedValue) => {
+                          onChange(selectedValue);
+
+                          const option = findLanguageByAnyValue(
+                            languageCatalog,
+                            selectedValue,
+                          );
+                          const currentLevel = getValues(
+                            `languages.${index}.level` as const,
+                          );
+                          const hasCurrentLevel = option?.levels?.some((level) =>
+                            Boolean(findLevelByAnyValue([level], currentLevel)),
+                          );
+
+                          if (!hasCurrentLevel) {
+                            setValue(
+                              `languages.${index}.level` as const,
+                              option?.levels?.[0]?.en || "",
+                            );
+                          }
+                        }}
+                        error={!!errors.languages?.[index]?.language}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    control={control}
+                    name={`languages.${index}.level`}
+                    rules={{ required: true }}
+                    render={({ field: { value, onChange } }) => (
+                      <SelectInput
+                        options={levelOptions}
+                        selectedValue={value}
+                        onValueChange={onChange}
+                        error={!!errors.languages?.[index]?.level}
+                      />
+                    )}
+                  />
                 </View>
-
-                <Controller
-                  control={control}
-                  name={`languages.${index}.language`}
-                  rules={{ required: true }}
-                  render={({ field: { value, onChange } }) => (
-                    <SelectInput
-                      options={AVAILABLE_LANGUAGES.map((option) => ({
-                        label: t(option.labelKey),
-                        value: option.value,
-                      }))}
-                      selectedValue={value}
-                      onValueChange={onChange}
-                      error={!!(errors.languages as any)?.[index]?.language}
-                    />
-                  )}
-                />
-
-                <Controller
-                  control={control}
-                  name={`languages.${index}.level`}
-                  rules={{ required: true }}
-                  render={({ field: { value, onChange } }) => (
-                    <SelectInput
-                      options={LANGUAGE_LEVELS.map((level) => ({
-                        label: level,
-                        value: level,
-                      }))}
-                      selectedValue={value}
-                      onValueChange={onChange}
-                      error={!!(errors.languages as any)?.[index]?.level}
-                    />
-                  )}
-                />
-              </View>
-            ))}
+              );
+            })}
 
             {!watchedLanguages?.length ? (
-              <ThemedText style={styles.errorText}>
-                {t("languagesRequired")}
-              </ThemedText>
+              <ThemedText style={styles.errorText}>{t("languagesRequired")}</ThemedText>
             ) : null}
           </View>
 
@@ -564,6 +698,10 @@ const styles = StyleSheet.create({
     color: "#FF3B30",
     fontSize: 12,
     marginTop: -6,
+  },
+  loadingHint: {
+    fontSize: 12,
+    opacity: 0.75,
   },
   phoneInputContainer: {
     borderWidth: 1,

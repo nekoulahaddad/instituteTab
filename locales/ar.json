@@ -101,5 +101,6 @@
     "approved": "مقبول",
     "canceled": "مرفوض",
     "unknown": "غير معروف"
-  }
+  },
+  "languagesLoadFailed": "تعذر تحميل اللغات من الخادم."
 }

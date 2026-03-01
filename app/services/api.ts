@@ -22,6 +22,18 @@ export type InstituteNews = {
   publishedAt: string;
 };
 
+export type CatalogLevel = {
+  _id: string;
+  en: string;
+  ar: string;
+};
+
+export type CatalogLanguage = {
+  _id: string;
+  language: LocalizedText;
+  levels: CatalogLevel[];
+};
+
 export async function getLatestNews() {
   try {
     const response = await api.get("/news/latest");
@@ -46,6 +58,34 @@ export async function getLatestNews() {
       error?.message,
     );
     return [];
+  }
+}
+
+export async function getLanguagesCatalog(): Promise<CatalogLanguage[]> {
+  try {
+    const response = await api.get("/languages");
+    const raw = response.data;
+
+    if (Array.isArray(raw)) {
+      return raw;
+    }
+
+    if (Array.isArray(raw?.data)) {
+      return raw.data;
+    }
+
+    if (Array.isArray(raw?.items)) {
+      return raw.items;
+    }
+
+    return [];
+  } catch (error: any) {
+    console.error("Get languages catalog error:", error);
+    const message =
+      error.response?.data?.message ||
+      error.message ||
+      "Failed to load languages";
+    throw new Error(message);
   }
 }
 

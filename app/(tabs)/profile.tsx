@@ -1,5 +1,8 @@
 import {
+  CatalogLanguage,
+  CatalogLevel,
   findUserByPhone,
+  getLanguagesCatalog,
   getStoredUser,
   saveStoredUser,
 } from "@/app/services/api";
@@ -10,10 +13,11 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import ModernButton from "@/components/ui/modern-button";
 import { Branches } from "@/constants/enums";
+import { useLanguage } from "@/context/LanguageContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Image as ExpoImage } from "expo-image";
 import { useFocusEffect } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Image, StyleSheet, View } from "react-native";
 
@@ -22,12 +26,50 @@ type UserLanguage = {
   level: string;
 };
 
+const findLanguageByAnyValue = (
+  catalog: CatalogLanguage[],
+  value: unknown,
+): CatalogLanguage | undefined => {
+  if (typeof value !== "string" || !value.trim()) {
+    return undefined;
+  }
+
+  const input = value.trim().toLowerCase();
+  return catalog.find((item) => {
+    return (
+      item._id.toLowerCase() === input ||
+      item.language.en.toLowerCase() === input ||
+      item.language.ar.toLowerCase() === input
+    );
+  });
+};
+
+const findLevelByAnyValue = (
+  levels: CatalogLevel[],
+  value: unknown,
+): CatalogLevel | undefined => {
+  if (typeof value !== "string" || !value.trim()) {
+    return undefined;
+  }
+
+  const input = value.trim().toLowerCase();
+  return levels.find((item) => {
+    return (
+      item._id.toLowerCase() === input ||
+      item.en.toLowerCase() === input ||
+      item.ar.toLowerCase() === input
+    );
+  });
+};
+
 export default function ProfileScreen() {
   const { t } = useTranslation();
+  const { language: appLanguage } = useLanguage();
   const [user, setUser] = useState<any>(null);
   const [qrVisible, setQrVisible] = useState(false);
   const [statusLoading, setStatusLoading] = useState(true);
   const [userStatus, setUserStatus] = useState<string | null>(null);
+  const [languageCatalog, setLanguageCatalog] = useState<CatalogLanguage[]>([]);
 
   const mutedColor = useThemeColor(
     { light: "#5B6670", dark: "#A9B4BE" },
@@ -73,6 +115,19 @@ export default function ProfileScreen() {
       setStatusLoading(false);
     }
   }, []);
+
+  const loadLanguageCatalog = useCallback(async () => {
+    try {
+      const catalog = await getLanguagesCatalog();
+      setLanguageCatalog(catalog);
+    } catch (error) {
+      console.error("Error loading languages catalog:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadLanguageCatalog();
+  }, [loadLanguageCatalog]);
 
   useFocusEffect(
     useCallback(() => {
@@ -138,14 +193,32 @@ export default function ProfileScreen() {
     return t(`statuses.${status}`, { defaultValue: status });
   };
 
+  const getLocalizedLanguageLabel = (languageValue: string) => {
+    const match = findLanguageByAnyValue(languageCatalog, languageValue);
+    if (!match) {
+      return languageValue;
+    }
+    return appLanguage === "ar" ? match.language.ar : match.language.en;
+  };
+
+  const getLocalizedLevelLabel = (languageValue: string, levelValue: string) => {
+    const languageMatch = findLanguageByAnyValue(languageCatalog, languageValue);
+    const levelMatch = findLevelByAnyValue(languageMatch?.levels || [], levelValue);
+
+    if (!levelMatch) {
+      return levelValue;
+    }
+
+    return appLanguage === "ar" ? levelMatch.ar : levelMatch.en;
+  };
+
   const userLanguages = useMemo<UserLanguage[]>(() => {
     if (!Array.isArray(user?.languages)) {
       return [];
     }
 
     return user.languages.filter(
-      (item: any) =>
-        typeof item?.language === "string" && typeof item?.level === "string",
+      (item: any) => typeof item?.language === "string" && typeof item?.level === "string",
     );
   }, [user]);
 
@@ -198,18 +271,15 @@ export default function ProfileScreen() {
       {commonHeader}
 
       <ThemedView style={styles.container}>
-        <View style={[styles.profileCard, { backgroundColor: cardBackground }]}>
+        <View style={[styles.profileCard, { backgroundColor: cardBackground }]}> 
           {user.profileImageUrl ? (
-            <Image
-              source={{ uri: user.profileImageUrl }}
-              style={styles.avatar}
-            />
+            <Image source={{ uri: user.profileImageUrl }} style={styles.avatar} />
           ) : null}
 
           <ThemedText style={styles.profileName} type="title">
             {user.englishName}
           </ThemedText>
-          <ThemedText style={[styles.profileSubName, { color: mutedColor }]}>
+          <ThemedText style={[styles.profileSubName, { color: mutedColor }]}> 
             {user.arabicName}
           </ThemedText>
 
@@ -241,9 +311,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View
-          style={[styles.languagesCard, { backgroundColor: cardBackground }]}
-        >
+        <View style={[styles.languagesCard, { backgroundColor: cardBackground }]}> 
           <View style={styles.languagesCardHeader}>
             <ThemedText type="subtitle">{t("languages")}</ThemedText>
             <View style={styles.languagesCountChip}>
@@ -256,18 +324,15 @@ export default function ProfileScreen() {
           {userLanguages.length ? (
             <View style={styles.languagesList}>
               {userLanguages.map((item, index) => (
-                <View
-                  key={`${item.language}-${item.level}-${index}`}
-                  style={styles.languageTagRow}
-                >
+                <View key={`${item.language}-${item.level}-${index}`} style={styles.languageTagRow}>
                   <View style={styles.languageTag}>
                     <ThemedText style={styles.languageTagText}>
-                      {item.language}
+                      {getLocalizedLanguageLabel(item.language)}
                     </ThemedText>
                   </View>
                   <View style={styles.levelTag}>
                     <ThemedText style={styles.levelTagText}>
-                      {item.level}
+                      {getLocalizedLevelLabel(item.language, item.level)}
                     </ThemedText>
                   </View>
                 </View>
@@ -281,10 +346,7 @@ export default function ProfileScreen() {
         </View>
 
         <View style={{ marginTop: 12 }}>
-          <ModernButton
-            title={t("showQR")}
-            onPress={() => setQrVisible(true)}
-          />
+          <ModernButton title={t("showQR")} onPress={() => setQrVisible(true)} />
         </View>
 
         <QRModal
@@ -304,7 +366,7 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
   },
   container: {
-    padding: 2,
+    padding: 16,
     gap: 12,
   },
   profileCard: {
@@ -325,7 +387,7 @@ const styles = StyleSheet.create({
   },
   profileName: {
     fontSize: 24,
-    lineHeight: 40,
+    lineHeight: 28,
     textAlign: "center",
   },
   profileSubName: {
