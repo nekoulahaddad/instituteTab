@@ -78,7 +78,9 @@ const findLevelByAnyValue = (
   });
 };
 
-const createDefaultLanguageEntry = (catalog: CatalogLanguage[]): UserLanguageInput => {
+const createDefaultLanguageEntry = (
+  catalog: CatalogLanguage[],
+): UserLanguageInput => {
   const firstLanguage = catalog[0];
   const firstLevel = firstLanguage?.levels?.[0];
 
@@ -157,7 +159,8 @@ const normalizeLanguages = (
 
     const rawLevel = typeof item?.level === "string" ? item.level : "";
     const levelMatch = findLevelByAnyValue(availableLevels, rawLevel);
-    const levelValue = levelMatch?.en || rawLevel || availableLevels[0]?.en || "";
+    const levelValue =
+      levelMatch?.en || rawLevel || availableLevels[0]?.en || "";
 
     return {
       language: languageValue,
@@ -179,9 +182,13 @@ export default function RegisterScreen() {
   const [languageCatalog, setLanguageCatalog] = useState<CatalogLanguage[]>([]);
   const [branchCatalog, setBranchCatalog] = useState<CatalogBranch[]>([]);
   const [languagesLoading, setLanguagesLoading] = useState(false);
-  const [languagesLoadError, setLanguagesLoadError] = useState<string | null>(null);
+  const [languagesLoadError, setLanguagesLoadError] = useState<string | null>(
+    null,
+  );
   const [branchesLoading, setBranchesLoading] = useState(false);
-  const [branchesLoadError, setBranchesLoadError] = useState<string | null>(null);
+  const [branchesLoadError, setBranchesLoadError] = useState<string | null>(
+    null,
+  );
 
   const {
     control,
@@ -227,7 +234,8 @@ export default function RegisterScreen() {
   );
 
   const getLocalizedBranchName = useCallback(
-    (item: CatalogBranch) => (appLanguage === "ar" ? item.name.ar : item.name.en),
+    (item: CatalogBranch) =>
+      appLanguage === "ar" ? item.name.ar : item.name.en,
     [appLanguage],
   );
 
@@ -321,7 +329,10 @@ export default function RegisterScreen() {
           setValue("englishName", userByPhone.englishName || "");
           setValue("phone", userByPhone.phone || "");
           setValue("role", userByPhone.role || UserRoles[0]);
-          setValue("branchId", normalizeBranchId(userByPhone.branchId, branchCatalog));
+          setValue(
+            "branchId",
+            normalizeBranchId(userByPhone.branchId, branchCatalog),
+          );
           replace(normalizeLanguages(userByPhone.languages, languageCatalog));
 
           setUserId(userByPhone._id || userByPhone.id);
@@ -368,7 +379,10 @@ export default function RegisterScreen() {
   const handleSubmit = async (values: RegisterFormValues) => {
     setSignInMode(false);
 
-    const normalizedLanguages = normalizeLanguages(values.languages, languageCatalog);
+    const normalizedLanguages = normalizeLanguages(
+      values.languages,
+      languageCatalog,
+    );
 
     if (
       !normalizedLanguages.length ||
@@ -486,7 +500,10 @@ export default function RegisterScreen() {
               }}
               render={({ field: { value, onChange } }) => (
                 <TextInput
-                  style={[styles.input, errors.englishName && styles.errorInput]}
+                  style={[
+                    styles.input,
+                    errors.englishName && styles.errorInput,
+                  ]}
                   value={value}
                   onChangeText={onChange}
                   keyboardType="ascii-capable"
@@ -517,6 +534,7 @@ export default function RegisterScreen() {
               }}
               render={({ field: { value, onChange } }) => (
                 <PhoneInput
+                  value={value || ""}
                   ref={phoneInputRef}
                   defaultValue={value || ""}
                   defaultCode={selectedCountryCode as any}
@@ -573,7 +591,9 @@ export default function RegisterScreen() {
               <ThemedText style={styles.label}>{t("languages")} *</ThemedText>
               <Pressable
                 style={styles.addLanguageButton}
-                onPress={() => append(createDefaultLanguageEntry(languageCatalog))}
+                onPress={() =>
+                  append(createDefaultLanguageEntry(languageCatalog))
+                }
               >
                 <ThemedText style={styles.addLanguageButtonText}>
                   + {t("addLanguage")}
@@ -585,7 +605,9 @@ export default function RegisterScreen() {
               <ThemedText style={styles.loadingHint}>{t("loading")}</ThemedText>
             ) : null}
             {languagesLoadError ? (
-              <ThemedText style={styles.errorText}>{languagesLoadError}</ThemedText>
+              <ThemedText style={styles.errorText}>
+                {languagesLoadError}
+              </ThemedText>
             ) : null}
 
             {fields.map((field, index) => {
@@ -594,10 +616,12 @@ export default function RegisterScreen() {
                 languageCatalog,
                 selectedLanguage,
               );
-              const levelOptions = (selectedLanguageOption?.levels || []).map((level) => ({
-                label: getLocalizedLevelName(level),
-                value: level.en,
-              }));
+              const levelOptions = (selectedLanguageOption?.levels || []).map(
+                (level) => ({
+                  label: getLocalizedLevelName(level),
+                  value: level.en,
+                }),
+              );
 
               return (
                 <View key={field.id} style={styles.languageRowCard}>
@@ -612,7 +636,8 @@ export default function RegisterScreen() {
                       }}
                       style={[
                         styles.removeLanguageButton,
-                        fields.length === 1 && styles.removeLanguageButtonDisabled,
+                        fields.length === 1 &&
+                          styles.removeLanguageButtonDisabled,
                       ]}
                     >
                       <ThemedText style={styles.removeLanguageButtonText}>
@@ -642,8 +667,11 @@ export default function RegisterScreen() {
                           const currentLevel = getValues(
                             `languages.${index}.level` as const,
                           );
-                          const hasCurrentLevel = option?.levels?.some((level) =>
-                            Boolean(findLevelByAnyValue([level], currentLevel)),
+                          const hasCurrentLevel = option?.levels?.some(
+                            (level) =>
+                              Boolean(
+                                findLevelByAnyValue([level], currentLevel),
+                              ),
                           );
 
                           if (!hasCurrentLevel) {
@@ -676,7 +704,9 @@ export default function RegisterScreen() {
             })}
 
             {!watchedLanguages?.length ? (
-              <ThemedText style={styles.errorText}>{t("languagesRequired")}</ThemedText>
+              <ThemedText style={styles.errorText}>
+                {t("languagesRequired")}
+              </ThemedText>
             ) : null}
           </View>
 
@@ -686,7 +716,9 @@ export default function RegisterScreen() {
               <ThemedText style={styles.loadingHint}>{t("loading")}</ThemedText>
             ) : null}
             {branchesLoadError ? (
-              <ThemedText style={styles.errorText}>{branchesLoadError}</ThemedText>
+              <ThemedText style={styles.errorText}>
+                {branchesLoadError}
+              </ThemedText>
             ) : null}
             <Controller
               control={control}

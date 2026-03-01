@@ -127,9 +127,7 @@ export async function getBranchesCatalog(): Promise<CatalogBranch[]> {
 
 export async function registerUser(payload: any) {
   try {
-    console.log("Registering user with payload:", payload, BASE_URL);
     const response = await api.post("/registration", payload);
-    console.log("Registration response:", response.data);
 
     // If backend returns token or user, store minimal user
     if (response.data.user) {
@@ -159,9 +157,12 @@ export async function saveStoredUser(user: any) {
 export async function findUserByPhone(phone: string) {
   try {
     const response = await api.get(`/users/find-by-phone/${phone}`);
+    if (!response?.data?.phone) {
+      await AsyncStorage.removeItem("user");
+    }
     return response.data;
   } catch (error: any) {
-    console.error("Find user by phone error:", error);
+    await AsyncStorage.removeItem("user");
     const message =
       error.response?.data?.message || error.message || "User not found";
     throw new Error(message);
@@ -170,9 +171,7 @@ export async function findUserByPhone(phone: string) {
 
 export async function updateRegistration(id: string, payload: any) {
   try {
-    console.log("Updating registration with ID:", id, "payload:", payload);
     const response = await api.patch(`/registration/${id}`, payload);
-    console.log("Update registration response:", response.data);
 
     // Update stored user
     if (response.data.user) {
