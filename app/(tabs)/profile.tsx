@@ -268,6 +268,12 @@ export default function ProfileScreen() {
         typeof item?.language === "string" && typeof item?.level === "string",
     );
   }, [user]);
+  const adminMessage = useMemo(() => {
+    if (typeof user?.adminMessage !== "string") {
+      return "";
+    }
+    return user.adminMessage.trim();
+  }, [user?.adminMessage]);
 
   const commonHeader = (
     <Header
@@ -295,6 +301,26 @@ export default function ProfileScreen() {
       >
         {commonHeader}
         <ThemedView style={styles.container}>
+          {adminMessage ? (
+            <View
+              style={[
+                styles.adminMessageCard,
+                { backgroundColor: cardBackground },
+              ]}
+            >
+              <View style={styles.adminMessageHeader}>
+                <View style={styles.adminMessageDot} />
+                <ThemedText style={styles.adminMessageTitle} type="subtitle">
+                  {t("adminMessage", { defaultValue: "Admin Message" })}
+                </ThemedText>
+              </View>
+              <ThemedText
+                style={[styles.adminMessageText, { color: mutedColor }]}
+              >
+                {adminMessage}
+              </ThemedText>
+            </View>
+          ) : null}
           <ThemedText style={styles.statusMessage}>
             {statusLoading ? t("loading") : getStatusMessage()}
           </ThemedText>
@@ -318,6 +344,22 @@ export default function ProfileScreen() {
       {commonHeader}
 
       <ThemedView style={styles.container}>
+        {adminMessage ? (
+          <View
+            style={[styles.adminMessageCard, { backgroundColor: cardBackground }]}
+          >
+            <View style={styles.adminMessageHeader}>
+              <View style={styles.adminMessageDot} />
+              <ThemedText style={styles.adminMessageTitle} type="subtitle">
+                {t("adminMessage", { defaultValue: "Admin Message" })}
+              </ThemedText>
+            </View>
+            <ThemedText style={[styles.adminMessageText, { color: mutedColor }]}>
+              {adminMessage}
+            </ThemedText>
+          </View>
+        ) : null}
+
         <View style={[styles.profileCard, { backgroundColor: cardBackground }]}>
           {user.profileImageUrl ? (
             <Image
@@ -468,6 +510,37 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 12,
     fontWeight: "600",
+  },
+  adminMessageCard: {
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(10,126,164,0.28)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  adminMessageHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
+  adminMessageDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: "#0A7EA4",
+  },
+  adminMessageTitle: {
+    color: "#0A7EA4",
+    fontWeight: "700",
+  },
+  adminMessageText: {
+    fontSize: 14,
+    lineHeight: 22,
   },
   languagesCard: {
     borderRadius: 20,

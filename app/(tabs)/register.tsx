@@ -457,7 +457,12 @@ export default function RegisterScreen() {
           </ThemedText>
 
           <View style={styles.formGroup}>
-            <ThemedText style={styles.label}>{t("arabicName")} *</ThemedText>
+            <ThemedText style={styles.label}>
+              {t("registerArabicTripleName", {
+                defaultValue: t("arabicName"),
+              })}{" "}
+              *
+            </ThemedText>
             <Controller
               control={control}
               name="arabicName"
@@ -487,7 +492,12 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.formGroup}>
-            <ThemedText style={styles.label}>{t("englishName")} *</ThemedText>
+            <ThemedText style={styles.label}>
+              {t("registerEnglishTripleName", {
+                defaultValue: t("englishName"),
+              })}{" "}
+              *
+            </ThemedText>
             <Controller
               control={control}
               name="englishName"
